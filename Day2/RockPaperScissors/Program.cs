@@ -45,8 +45,8 @@ class Game
 
         foreach (var game in games)
         {
-            var otherHand = char.Parse(game.Split( )[0]);
-            var yourHand = char.Parse(game.Split( )[1]);
+            var otherHand = char.Parse(game.Split()[0]);
+            var yourHand = char.Parse(game.Split()[1]);
             totalScoreGame1 += playGame1(otherHand, yourHand);
             totalScoreGame2 += playGame2(otherHand, yourHand);
         }
