@@ -34,7 +34,7 @@ for (var rucksackIndex = 0; rucksackIndex < fullRucksackContent.Length; rucksack
             .First();
 
         uniqueForGroupList.Add(similarEntry);
-        contentOfRucksackGroup.Clear();
+        contentOfRucksackGroup.Clear(); // Compose a new group of three rucksacks
     }
 
     rucksackContent.Clear(); // Reuse rucksackContent
