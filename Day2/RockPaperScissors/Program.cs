@@ -60,7 +60,7 @@ int playGame2(char otherHand, char yourHand)
         {'Z', 3}
     };
 
-        Dictionary<char, char> findSameCard = new()
+    Dictionary<char, char> findSameCard = new()
     {
         {'A', 'X'},
         {'B', 'Y'},
