@@ -37,7 +37,24 @@ class Game
         {'C', 'X'}
     };
 
-    int playGame1(char otherHand, char yourHand)
+    public void PlayGames()
+    {
+        string[] games = File.ReadAllLines("input.txt");
+        int totalScoreGame1 = 0;
+        int totalScoreGame2 = 0;
+
+        foreach (var game in games)
+        {
+            var otherHand = char.Parse(game.Split( )[0]);
+            var yourHand = char.Parse(game.Split( )[1]);
+            totalScoreGame1 += playGame1(otherHand, yourHand);
+            totalScoreGame2 += playGame2(otherHand, yourHand);
+        }
+
+        Console.WriteLine($"Result for game 1 = {totalScoreGame1} and for game 2 = {totalScoreGame2}");
+    }
+
+    private int playGame1(char otherHand, char yourHand)
     {                
         var points = 0;
         if (convertHand[otherHand] == yourHand)
@@ -53,7 +70,7 @@ class Game
         return points;
     }
 
-    int playGame2(char otherHand, char yourHand)
+    private int playGame2(char otherHand, char yourHand)
     {
         var points = 0;
         switch (yourHand)
@@ -74,24 +91,6 @@ class Game
                 throw new Exception("Unexpected input");
         }
         return points;
-    }
-
-
-    public void PlayGames()
-    {
-        string[] games = File.ReadAllLines("input.txt");
-        int totalScoreGame1 = 0;
-        int totalScoreGame2 = 0;
-
-        foreach (var game in games)
-        {
-            var otherHand = char.Parse(game.Split( )[0]);
-            var yourHand = char.Parse(game.Split( )[1]);
-            totalScoreGame1 += playGame1(otherHand, yourHand);
-            totalScoreGame2 += playGame2(otherHand, yourHand);
-        }
-
-        Console.WriteLine($"Result for game 1 = {totalScoreGame1} and for game 2 = {totalScoreGame2}");
     }
 }
 
