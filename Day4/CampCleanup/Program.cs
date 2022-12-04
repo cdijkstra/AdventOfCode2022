@@ -47,7 +47,6 @@ class Camp
 
         var rangeNumbersFirstCamp = twoSections[0].Split('-');
         var numberOfEntriesFirstCamp = int.Parse(rangeNumbersFirstCamp[1]) - int.Parse(rangeNumbersFirstCamp[0]) + 1;
-
         foreach (int value in Enumerable.Range(int.Parse(rangeNumbersFirstCamp[0]), numberOfEntriesFirstCamp))
         {
             firstSection.Add(value);
