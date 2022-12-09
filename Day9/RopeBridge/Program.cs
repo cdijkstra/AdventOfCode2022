@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.Xml;
+using FluentAssertions;
 
 namespace RopeBridge;
 
@@ -13,11 +14,11 @@ public enum Direction
 public class RopeBridge
 {
     private List<List<char>> _grid = new ();
-    private (int x, int y) _positionHead = (50, 50);
-    private (int x, int y) _postitionTail = (50, 50);
+    private (int x, int y) _positionHead = new();
+    private (int x, int y) _postitionTail = new();
     
-    private const int _xMax = 100;
-    private const int _yMax = 100;
+    private const int _xMax = 5000;
+    private const int _yMax = 5000;
     public int SolveProblem1(string file)
     {
         Initialize(file);
@@ -26,7 +27,7 @@ public class RopeBridge
         {
             var direction = Enum.Parse(typeof(Direction), instruction.Split()[0]);
             var amount = int.Parse(instruction.Split()[1]);
-
+            
             // If initial difference of +1
             // _positionHead += amount and _postitionTail += amount
             
@@ -58,14 +59,13 @@ public class RopeBridge
                     break;
                 }
             }
+            // foreach (var entry in _grid)
+            // {
+            //     entry.ForEach(x => Console.Write(x));
+            //     Console.WriteLine();
+            // }
         }
 
-        foreach (var entry in _grid)
-        {
-            entry.ForEach(x => Console.Write(x));
-            Console.WriteLine();
-        }
-        
         return _grid.SelectMany(x => x).Count(y => y.Equals('#'));
     }
 
@@ -85,9 +85,9 @@ public class RopeBridge
                     break;
             }
 
-            foreach (var newVisitedPlace in Enumerable.Range(_postitionTail.x, moveTailRightBy))
+            for (var moveRight = 1; moveRight <= moveTailRightBy; moveRight++)
             {
-                _grid[newVisitedPlace][_postitionTail.y] = '#';
+                _grid[_postitionTail.x + moveRight][_postitionTail.y] = '#';
             }
         }
 
@@ -110,10 +110,9 @@ public class RopeBridge
                     break;
             }
 
-            foreach (var newVisitedPlace in Enumerable.Range(_postitionTail.x - moveTailLeftBy,
-                         moveTailLeftBy))
+            for (var moveLeft = 1; moveLeft <= moveTailLeftBy; moveLeft++)
             {
-                _grid[newVisitedPlace][_postitionTail.y] = '#';
+                _grid[_postitionTail.x - moveLeft][_postitionTail.y] = '#';
             }
         }
 
@@ -136,10 +135,9 @@ public class RopeBridge
                     break;
             }
 
-            foreach (var newVisitedPlace in Enumerable.Range(_postitionTail.y - moveTailDownBy,
-                         moveTailDownBy))
+            for (var moveDown = 1; moveDown <= moveTailDownBy; moveDown++)
             {
-                _grid[_postitionTail.x][newVisitedPlace] = '#';
+                _grid[_postitionTail.x][_postitionTail.y - moveDown] = '#';
             }
         }
 
@@ -152,19 +150,19 @@ public class RopeBridge
         int moveTailUpBy = CalculateStepsUp(amount);
         if (moveTailUpBy > 0)
         {
-            switch (_positionHead.y - _postitionTail.y)
+            switch (_positionHead.x - _postitionTail.x)
             {
                 case 1:
-                    _postitionTail.y++;
+                    _postitionTail.x++;
                     break;
                 case -1:
-                    _postitionTail.y--;
+                    _postitionTail.x--;
                     break;
             }
 
-            foreach (var newVisitedPlace in Enumerable.Range(_postitionTail.y, moveTailUpBy))
+            for (var moveUp = 1; moveUp <= moveTailUpBy; moveUp++)
             {
-                _grid[_postitionTail.x][newVisitedPlace] = '#';
+                _grid[_postitionTail.x][_postitionTail.y + moveUp] = '#';
             }
         }
 
@@ -181,6 +179,10 @@ public class RopeBridge
 
     private void Initialize(string file)
     {
+        _positionHead = (_xMax / 2 - 1, _yMax / 2 - 1);
+        _postitionTail = (_xMax / 2 - 1, _yMax / 2 - 1);
+        _grid.Clear();
+
         for (var idx = 0; idx < _xMax; idx++)
         {
             List<char> row = Enumerable.Repeat('.', _yMax).ToList();
@@ -243,9 +245,9 @@ internal static class Program
         ropeBridge.SolveProblem1("dummydata.txt").Should().Be(13);
         // treetop.SolveProblem2("dummydata.txt").Should().Be(8);
         //
-        // var solution1 = treetop.SolveProblem1("data.txt");
+        var solution1 = ropeBridge.SolveProblem1("data.txt");
         // var solution2 = treetop.SolveProblem2("data.txt");
         //
-        // Console.WriteLine($"Solutions are {solution1} and {solution2}");
+        Console.WriteLine($"Solutions are {solution1}");
     }
 }
