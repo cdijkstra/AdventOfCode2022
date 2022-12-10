@@ -1,5 +1,4 @@
-﻿using System.Security.AccessControl;
-using FluentAssertions;
+﻿using FluentAssertions;
 
 namespace RopeBridge;
 
@@ -14,10 +13,10 @@ public enum Direction
 public class RopeBridge
 {
     private List<List<char>> _grid = new ();
-    private List<(int x, int y)> _knots = new();
+    private (int x, int y)[] _knots;
 
-    private const int _xMax = 60;
-    private const int _yMax = 60;
+    private const int _xMax = 5000;
+    private const int _yMax = 5000;
     
     public int SolveProblem1(string file)
     {
@@ -28,18 +27,17 @@ public class RopeBridge
     public int SolveProblem2(string file)
     {
         Initialize(file, 10);
-
         return SolvePuzzle(file);
     }
     
     private void Initialize(string file, int totalKnots)
     {
-        _knots.Clear();
-        _grid.Clear();
-        
         var currentXPos = _xMax / 2 - 1;
         var currentYPos = _yMax / 2 - 1;
-        _knots = Enumerable.Repeat( ( currentXPos, currentYPos ), totalKnots).ToList();
+        _knots = new(int x, int y)[totalKnots];
+        _knots = Enumerable.Repeat((currentXPos, currentYPos), totalKnots).ToArray();
+        
+        _grid.Clear();
 
         for (var idx = 0; idx < _xMax; idx++)
         {
@@ -58,39 +56,45 @@ public class RopeBridge
             var direction = Enum.Parse(typeof(Direction), instruction.Split()[0]);
             var amount = int.Parse(instruction.Split()[1]);
 
-            switch (direction)
+            for (int i = 0; i < amount; i++)
             {
-                case Direction.U:
-                    MoveUp(amount);
-                    break;
-                case Direction.D:
-                    MoveDown(amount);
-                    break;
-                case Direction.L:
-                    MoveLeft(amount);
-                    break;
-                case Direction.R:
-                    MoveRight(amount);
-                    break;
-            }
+                switch (direction)
+                {
+                    case Direction.U:
+                        _knots[0].y += 1;
+                        // MoveUp(amount);
+                        break;
+                    case Direction.D:
+                        _knots[0].y -= 1;
+                        // MoveDown(amount);
+                        break;
+                    case Direction.L:
+                        _knots[0].x -= 1;
+                        // MoveLeft(amount);
+                        break;
+                    case Direction.R:
+                        _knots[0].x += 1;
+                        // MoveRight(amount);
+                        break;
+                }
 
-            var idx = 0;
-            foreach (var valueTuple in _knots)
-            {
-                Console.WriteLine($"{idx}: {valueTuple.x},{valueTuple.y}");
-                idx++;
+                for (int knotIndex = 1; knotIndex < _knots.Length; knotIndex++)
+                {
+                    int deltaX = _knots[knotIndex - 1].x - _knots[knotIndex].x;
+                    int deltaY = _knots[knotIndex - 1].y - _knots[knotIndex].y;
+
+                    if (Math.Abs(deltaX) > 1 || Math.Abs(deltaY) > 1)
+                    {
+                        _knots[knotIndex].x += Math.Sign(deltaX);
+                        _knots[knotIndex].y += Math.Sign(deltaY);
+                    }
+                }
+
+                Console.WriteLine($"Drawing at {_knots.Last().x},{_knots.Last().y}");
+                _grid[_knots.Last().x][_knots.Last().y] = '#';
             }
         }
 
-        foreach (var chars in _grid)
-        {
-            foreach (var c in chars)
-            {
-                Console.Write(c);
-            }
-            Console.WriteLine();
-        }
-        
         return _grid.SelectMany(x => x).Count(y => y.Equals('#'));
     }
 
@@ -103,7 +107,7 @@ public class RopeBridge
         {
             headX++;
             var newPositions = MoveIfPossible(headX, headY);
-            UpdatePositions(newPositions);
+            // UpdatePositions(newPositions);
         }
     }
     
@@ -116,7 +120,7 @@ public class RopeBridge
         {
             headX--;
             var newPositions = MoveIfPossible(headX, headY);
-            UpdatePositions(newPositions);
+            // UpdatePositions(newPositions);
         }
     }
 
@@ -129,7 +133,7 @@ public class RopeBridge
         {
             headY--;
             var newPositions = MoveIfPossible(headX, headY);
-            UpdatePositions(newPositions);
+            // UpdatePositions(newPositions);
         }
     }
 
@@ -142,14 +146,14 @@ public class RopeBridge
         {
             headY++;
             var newPositions = MoveIfPossible(headX, headY);
-            UpdatePositions(newPositions);
+            // UpdatePositions(newPositions);
         }
     }
 
     private List<(int x, int y)> MoveIfPossible(int headX, int headY)
     {
         List<(int x, int y)> newPositions = new() { (headX, headY) };
-        for (var knotIndex = 1; knotIndex < _knots.Count; knotIndex++)
+        for (var knotIndex = 1; knotIndex < _knots.Length; knotIndex++)
         {
             if (MoveEntry(newPositions[knotIndex - 1], _knots[knotIndex]))
             {
@@ -211,7 +215,7 @@ public class RopeBridge
             if (newPositions[knotIndex - 1].y - _knots[knotIndex].y > 1)
             {
                 // Move up 
-                // Console.WriteLine($"UP - {_knots[knotIndex].x},{_knots[knotIndex].y}");
+                Console.WriteLine($"UP - {_knots[knotIndex].x},{_knots[knotIndex].y} versus {newPositions[knotIndex - 1].x},{newPositions[knotIndex - 1].y}");
                 newX = _knots[knotIndex].x;
                 switch (newPositions[knotIndex - 1].x - _knots[knotIndex].x)
                 {
@@ -223,7 +227,7 @@ public class RopeBridge
                         break;
                 }
                 newY = _knots[knotIndex].y + 1;
-                // Console.WriteLine($"UP - {newX},{newY}");
+                Console.WriteLine($"UP - {newX},{newY}");
             }
             else
             {
@@ -255,10 +259,10 @@ public class RopeBridge
         return newPositions;
     }
 
-    private void UpdatePositions(List<(int x, int y)> newPositions)
-    {
-        _knots = newPositions;
-    }
+    // private void UpdatePositions(List<(int x, int y)> newPositions)
+    // {
+    //     _knots = newPositions;
+    // }
 
     private bool MoveEntry((int x, int y) head, (int x, int y) tail)
     {
@@ -267,7 +271,7 @@ public class RopeBridge
 
     private void PaintTail(int knotIndex, int newX, int newY)
     {
-        if (knotIndex == _knots.Count - 1)
+        if (knotIndex == _knots.Length - 1)
         {
             // This is the tail, so paint
             _grid[newX][newY] = '#';
@@ -280,13 +284,12 @@ internal static class Program
     static void Main(string[] args)
     {
         var ropeBridge = new RopeBridge();
-        // ropeBridge.SolveProblem1("dummydata.txt").Should().Be(13);
-        ropeBridge.SolveProblem2("dummydata2.txt");
-            // .Should().Be(36);
+        ropeBridge.SolveProblem1("dummydata.txt").Should().Be(13);
+        ropeBridge.SolveProblem2("dummydata2.txt").Should().Be(36);
         
-        // var solution1 = ropeBridge.SolveProblem1("data.txt");
-        // var solution2 = treetop.SolveProblem2("data.txt");
-        //
-        // Console.WriteLine($"Solutions are {solution1}");
+        var solution1 = ropeBridge.SolveProblem1("data.txt");
+        var solution2 = ropeBridge.SolveProblem2("data.txt");
+        
+        Console.WriteLine($"Solutions are {solution1} and {solution2}");
     }
 }
