@@ -28,60 +28,61 @@ public class Distress
         for (var index = 0; index < _numbers.Count; index++)
         {
             var numberPair = _numbers[index];
+            var leftEntry = numberPair.left;
+            var rightEntry = numberPair.right;
+            
             var rightOrder = true;
+            
+            List<string> leftArrays = CreateArrays(leftEntry, new List<string>());
+            List<string> rightArrays = CreateArrays(rightEntry, new List<string>());
+            // Console.WriteLine($"Concluding {leftArrays.Count},{rightArrays.Count} for round {index}");
+            // foreach (var leftArray in leftArrays)
+            // {
+            //     Console.WriteLine(leftArray);
+            // }
+            // foreach (var rightArray in rightArrays)
+            // {
+            //     Console.WriteLine(rightArray);
+            // }
 
-            var numberOfArrays = numberPair.left.Count(x => x == '[');
-            // Console.WriteLine($"Concluding {numberOfArrays} for round {index}");
-            if (numberOfArrays == 1)
+            if (leftArrays.Count < rightArrays.Count)
+            {
+                rightOrder = false;
+            }
+            else if (leftArrays.Count == 1)
             {
                 var leftArray = Array.ConvertAll(
-                    numberPair.left.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+                    leftArrays[0].ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
 
                 var rightArray = Array.ConvertAll(
-                    numberPair.right.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+                    rightArrays[0].ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
 
                 rightOrder = DetermineRightOrder(leftArray, rightArray);
             }
-            else if (numberOfArrays > 1)
+            else if (leftArrays.Count > 1)
             {
-                var leftEntry = numberPair.left;
-                var rightEntry = numberPair.right;
-                List<string> leftArrays = CreateArrays(leftEntry, new());
-                List<string> rightArrays = CreateArrays(rightEntry, new());
-                
-                // Console.WriteLine("Left ---- ");
-                // leftArrays.ForEach(x => Console.WriteLine(x));
-                //
-                // Console.WriteLine("Right ---- ");
-                // rightArrays.ForEach(x => Console.WriteLine(x));
-
-                if (leftArrays.Count != rightArrays.Count)
-                {
-                    // Console.WriteLine($"{index} -- Left = {leftArrays.Count} and right = {rightArrays.Count}");
-                    throw new Exception("WHUUT");
-                }
-                
                 for (var i = 0; i < leftArrays.Count; i++)
                 {
                     var leftArray = Array.ConvertAll(
-                            leftArrays[i].Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c))
+                            leftArrays[i].ToCharArray(), c => (int)Char.GetNumericValue(c))
                         .ToList();
 
                     var rightArray = Array.ConvertAll(
-                            rightArrays[i].Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c))
+                            rightArrays[i].ToCharArray(), c => (int)Char.GetNumericValue(c))
                         .ToList();
-
+                    
                     if (DetermineRightOrder(leftArray, rightArray) == false)
                     {
                         rightOrder = false;
                     }
                 }
             }
-
-            Console.WriteLine($"Checking for {index} - CONCLUSION {rightOrder}");
+            
+            Console.WriteLine($"Concluding {rightOrder} for round {index + 1}");
+            
             if (rightOrder)
             {
-                _indicesRightOrder += index;
+                _indicesRightOrder += (index + 1);
             }
         }
 
@@ -100,7 +101,7 @@ public class Distress
         }
     }
 
-    private List<string> CreateArrays(string entry, List<string> arrays)
+    public List<string> CreateArrays(string entry, List<string> arrays)
     {
         var rightboundArray = entry.IndexOf(']');
         var leftboundArray = entry.Substring(0, rightboundArray).LastIndexOf('[') + 1;
@@ -118,9 +119,9 @@ public class Distress
             
             // Console.WriteLine($" Examaning = {remainingString}");
             
-            if (Regex.IsMatch(remainingString, ".*[.*[0-9]+]"))
+            // ".*[.*[0-9]+]"
+            if (Regex.IsMatch(remainingString, ".*]"))
             {
-                // Console.WriteLine("Match");
                 CreateArrays(remainingString, arrays);
             }
         }
@@ -137,12 +138,19 @@ public class Distress
         }
         else if (leftArray.Count > rightArray.Count)
         {
-            rightOrder = false;
+            for (var idx = 0; idx != rightArray.Count; idx++)
+            {
+                if (leftArray[idx] > rightArray[idx])
+                {
+                    rightOrder = false;
+                }
+            }
         }
         else if (leftArray.Count <= rightArray.Count)
         {
             for (var idx = 0; idx != leftArray.Count; idx++)
             {
+                // Console.WriteLine($"Comparing {leftArray[idx]},{rightArray[idx]}");
                 if (leftArray[idx] > rightArray[idx])
                 {
                     rightOrder = false;
@@ -152,14 +160,19 @@ public class Distress
 
         return rightOrder;
     }
-
-
-    internal static class Program
+    
+    class Program
     {
         static void Main(string[] args)
         {
-            var treetop = new Distress();
-            treetop.SolveProblem1("dummydata.txt").Should().Be(13);
+            var distress = new Distress();
+            distress.CreateArrays("[1,1,3,1,1]", new List<string>()).Should().BeEquivalentTo(new[] { "11311" });
+            distress.CreateArrays("[[1],[2,3,4]]", new List<string>()).Should().BeEquivalentTo(new[] { "1", "234" });
+            distress.CreateArrays("[[8,7,6]]", new List<string>()).Should().BeEquivalentTo(new[] { "876" });
+            distress.CreateArrays("[[4,4],4,4,4]", new List<string>()).Should().BeEquivalentTo(new[] { "44", "444" });
+            distress.CreateArrays("[1,[2,[3,[4,[5,6,7]]]],8,9]", new List<string>()).Should().BeEquivalentTo(new[] { "567", "4", "3", "2", "189" });
+
+            distress.SolveProblem1("dummydata.txt").Should().Be(13);
 
             // Console.WriteLine($"Solutions are {solution1} and {solution2}");
         }
