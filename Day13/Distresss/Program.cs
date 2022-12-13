@@ -107,10 +107,12 @@ public class Distress
         
         arrays.Add(firstArray.Filter(_charsToFilter));
 
-        var remainingString = entry.Substring(rightboundArray + 1, entry.Length - rightboundArray - 1);
-        if (Regex.IsMatch(remainingString, ".*[0-9]+]"))
+        var remainingStringLeft = entry.Substring(0, leftboundArray);
+        var remainingStringRight = entry.Substring(rightboundArray + 1, entry.Length - rightboundArray - 1);
+        var remainingString = string.Concat(remainingStringLeft, remainingStringRight);
+        if (remainingString.Contains(']'))
         {
-            CreateArrays(remainingString, arrays);
+            CreateArrays(remainingStringRight, arrays);
         }
 
         return arrays;
@@ -139,7 +141,6 @@ public class Distress
             {
                 if (numberPair.left[idx] > numberPair.right[idx])
                 {
-                    // Console.WriteLine($"2 - False for {index}");
                     rightOrder = false;
                 }
             }
