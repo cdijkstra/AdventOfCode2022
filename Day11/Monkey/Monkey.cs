@@ -9,9 +9,9 @@ class Monkey
     public Func<UInt64, UInt64> Operation { get; set; }
     public List<UInt64> Items { get; set; } = new();
     
-    public uint DivisibleBy { get; set; } = new();
+    public UInt64 DivisibleBy { get; set; } = new();
 
     public List<int> ThrowToMonkey { get; set; } = new();
 
-    public UInt64 Inspections { get; set; } = 0;
+    public int Inspections { get; set; } = 0;
 }

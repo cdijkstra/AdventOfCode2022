@@ -1,6 +1,6 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Numerics;
+using System.Text.RegularExpressions;
 using FluentAssertions;
-using System.Numerics;
 
 namespace Monkey;
 
@@ -8,7 +8,7 @@ public class Puzzle
 {
     private List<Monkey> _monkeys = new();
 
-    public UInt64 SolveProblem(string file, int rounds, bool secondExercise)
+    public int SolveProblem(string file, int rounds, bool secondExercise)
     {
         Initialize(file, secondExercise);
         return InspectItems(rounds);
@@ -45,7 +45,7 @@ public class Puzzle
                 }
                 else
                 {
-                    var number = uint.Parse(num);
+                    var number = UInt64.Parse(num);
                     var operation = char.Parse(info.TrimStart().Split()[4]);
                     monkey.Operation = operation switch
                     {
@@ -57,7 +57,7 @@ public class Puzzle
             }
             else if (info.TrimStart().StartsWith("Test"))
             {
-                monkey.DivisibleBy = uint.Parse(info.TrimStart().Split()[3]);
+                monkey.DivisibleBy = UInt64.Parse(info.TrimStart().Split()[3]);
             }
             else if (info.TrimStart().StartsWith("If true"))
             {
@@ -79,40 +79,55 @@ public class Puzzle
         _monkeys.Add(monkey);
     }
 
-    private UInt64 InspectItems(int rounds)
+    private int InspectItems(int rounds)
     {
+        var totalDivisbleBy = _monkeys.Select(x => x.DivisibleBy).Aggregate((x, y) => x * y);
+        Console.WriteLine($"TotalDivisible = {totalDivisbleBy}");
         foreach (var currentRound in Enumerable.Range(0, rounds))
         {
             foreach (var monkey in _monkeys)
             {
                 while (monkey.Items.Count > 0)
                 {
-                    try
+                    checked
                     {
-                        checked
+                        if (monkey.Number == 2)
                         {
-                            var worryItem = monkey.Operation(monkey.Items.First());
+                            Console.WriteLine($"Item before = {monkey.Items.First()}");
+                        }
+                        var worryItem = monkey.Operation(monkey.Items.First());
+                        if (monkey.Number == 2)
+                        {
+                            Console.WriteLine($"Item after = {worryItem}");
+                        }
+                        
+                        
+                        monkey.Inspections++;
+                        if (worryItem % totalDivisbleBy == 0)
+                        {
+                            Console.WriteLine("OOOOK");
+                            worryItem /= totalDivisbleBy;
+                        }
 
-                            monkey.Inspections++;
-                            if (worryItem % monkey.DivisibleBy == 0)
+                        if (worryItem % monkey.DivisibleBy == 0)
+                        {
+                            var newMonkey = monkey.ThrowToMonkey.First();
+                            _monkeys.Single(x => x.Number == newMonkey).Items.Add(worryItem);
+                            monkey.Items.RemoveAt(0);
+                            if (monkey.Number == 2)
                             {
-                                var newMonkey = monkey.ThrowToMonkey.First();
-                                _monkeys.Single(x => x.Number == newMonkey).Items.Add(worryItem);
-                                monkey.Items.RemoveAt(0);
-                                // Console.WriteLine($"{monkey.Number} throws {worryItem} to {newMonkey}");
-                            }
-                            else
-                            {
-                                var newMonkey = monkey.ThrowToMonkey.Last();
-                                _monkeys.Single(x => x.Number == newMonkey).Items.Add(worryItem);
-                                monkey.Items.RemoveAt(0);
-                                // Console.WriteLine($"{monkey.Number} throws {worryItem} to {newMonkey}");
+                                Console.WriteLine($"{monkey.Number} throws {worryItem} to {newMonkey} in round {currentRound}");
                             }
                         }
-                    }
-                    catch (OverflowException ex)
-                    {
-                        Console.WriteLine("Overflow Exception caught as: " + ex.ToString());
+                        else
+                        {
+                            var newMonkey = monkey.ThrowToMonkey.Last();
+                            _monkeys.Single(x => x.Number == newMonkey).Items.Add(worryItem);
+                            monkey.Items.RemoveAt(0);
+                            if (monkey.Number == 2)
+                            {
+                                Console.WriteLine($"{monkey.Number} throws {worryItem} to {newMonkey} in round {currentRound}");
+                            }                        }
                     }
                 }
             }
@@ -120,12 +135,21 @@ public class Puzzle
 
         var bla = _monkeys.Select(mon => mon.Inspections)
             .OrderByDescending(x => x)
-            .Take(2);
+            .Take(4);
 
-        // foreach (var b in bla)
-        // {
-        //     Console.WriteLine($"Found {b}");
-        // }
+        foreach (var en in bla)
+        {
+            Console.Write(en + ",");
+            Console.WriteLine();
+        }
+
+        foreach (var monkey in _monkeys)
+        {
+            foreach (var item in monkey.Items)
+            {
+                Console.Write($"Item = {item}");
+            }
+        }
 
         return _monkeys.Select(mon => mon.Inspections)
             .OrderByDescending(x => x)
@@ -143,11 +167,11 @@ internal static class Program
         
         // var answer = puzzle.SolveProblem("data.txt", 20, false);
         // Console.WriteLine(answer);
-        puzzle.SolveProblem("dummydata.txt", 1000, true).Should().Be(2713310158);
-        
+        puzzle.SolveProblem("dummydata.txt", 20, true);
+
         // var solution1 = puzzle.SolveProblem1("data.txt");
         // var solution2 = puzzle.SolveProblem2("data.txt");
-        
+
         // Console.WriteLine($"Solutions are {solution1}");
     }
 }
