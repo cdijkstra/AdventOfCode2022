@@ -31,6 +31,7 @@ public class Distress
             var rightOrder = true;
 
             var numberOfArrays = numberPair.left.Count(x => x == '[');
+            // Console.WriteLine($"Concluding {numberOfArrays} for round {index}");
             if (numberOfArrays == 1)
             {
                 var leftArray = Array.ConvertAll(
@@ -39,7 +40,7 @@ public class Distress
                 var rightArray = Array.ConvertAll(
                     numberPair.right.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
 
-                rightOrder = DetermineRightOrder(leftArray, rightOrder, rightArray, numberPair);
+                rightOrder = DetermineRightOrder(leftArray, rightArray);
             }
             else if (numberOfArrays > 1)
             {
@@ -48,15 +49,15 @@ public class Distress
                 List<string> leftArrays = CreateArrays(leftEntry, new());
                 List<string> rightArrays = CreateArrays(rightEntry, new());
                 
-                Console.WriteLine("Left ---- ");
-                leftArrays.ForEach(x => Console.WriteLine(x));
-                
-                Console.WriteLine("Right ---- ");
-                rightArrays.ForEach(x => Console.WriteLine(x));
+                // Console.WriteLine("Left ---- ");
+                // leftArrays.ForEach(x => Console.WriteLine(x));
+                //
+                // Console.WriteLine("Right ---- ");
+                // rightArrays.ForEach(x => Console.WriteLine(x));
 
                 if (leftArrays.Count != rightArrays.Count)
                 {
-                    Console.WriteLine($"Left = {leftArrays.Count} and right = {rightArrays.Count}");
+                    // Console.WriteLine($"{index} -- Left = {leftArrays.Count} and right = {rightArrays.Count}");
                     throw new Exception("WHUUT");
                 }
                 
@@ -70,7 +71,7 @@ public class Distress
                             rightArrays[i].Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c))
                         .ToList();
 
-                    if (!DetermineRightOrder(leftArray, rightOrder, rightArray, numberPair))
+                    if (DetermineRightOrder(leftArray, rightArray) == false)
                     {
                         rightOrder = false;
                     }
@@ -105,41 +106,44 @@ public class Distress
         var leftboundArray = entry.Substring(0, rightboundArray).LastIndexOf('[') + 1;
         var firstArray = entry.Substring(leftboundArray, rightboundArray - leftboundArray);
         
-        arrays.Add(firstArray.Filter(_charsToFilter));
-
-        var remainingStringLeft = entry.Substring(0, leftboundArray);
-        var remainingStringRight = entry.Substring(rightboundArray + 1, entry.Length - rightboundArray - 1);
-        var remainingString = string.Concat(remainingStringLeft, remainingStringRight);
-        if (remainingString.Contains(']'))
+        if (!string.IsNullOrEmpty(firstArray.Filter(_charsToFilter)))
+            arrays.Add(firstArray.Filter(_charsToFilter));
+    
+        // Console.WriteLine($" Found {entry} => {firstArray} and {leftboundArray}, {rightboundArray}");
+        if (leftboundArray != 0 && rightboundArray != 0)
         {
-            CreateArrays(remainingStringRight, arrays);
+            var remainingStringLeft = entry.Substring(0, leftboundArray - 1);
+            var remainingStringRight = entry.Substring(rightboundArray + 1, entry.Length - rightboundArray - 1);
+            var remainingString = string.Concat(remainingStringLeft, remainingStringRight);
+            
+            // Console.WriteLine($" Examaning = {remainingString}");
+            
+            if (Regex.IsMatch(remainingString, ".*[.*[0-9]+]"))
+            {
+                // Console.WriteLine("Match");
+                CreateArrays(remainingString, arrays);
+            }
         }
 
         return arrays;
     }
     
-    private static bool DetermineRightOrder(List<int> leftArray, bool rightOrder, List<int> rightArray,
-        (string left, string right) numberPair)
+    private static bool DetermineRightOrder(List<int> leftArray, List<int> rightArray)
     {
+        bool rightOrder = true;
         if (leftArray.Count == 0)
         {
             rightOrder = true;
         }
         else if (leftArray.Count > rightArray.Count)
         {
-            for (var idx = 0; idx != rightArray.Count; idx++)
-            {
-                if (numberPair.left[idx] > numberPair.right[idx])
-                {
-                    rightOrder = false;
-                }
-            }
+            rightOrder = false;
         }
         else if (leftArray.Count <= rightArray.Count)
         {
             for (var idx = 0; idx != leftArray.Count; idx++)
             {
-                if (numberPair.left[idx] > numberPair.right[idx])
+                if (leftArray[idx] > rightArray[idx])
                 {
                     rightOrder = false;
                 }
