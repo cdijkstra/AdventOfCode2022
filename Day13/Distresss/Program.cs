@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.Text.RegularExpressions;
+using FluentAssertions;
 
 namespace Distress;
 
@@ -40,22 +41,40 @@ public class Distress
 
                 rightOrder = DetermineRightOrder(leftArray, rightOrder, rightArray, numberPair);
             }
-            else if (numberOfArrays == 2)
+            else if (numberOfArrays > 1)
             {
-                var modifyEntry = numberPair.left;
-                var rightboundArray = modifyEntry.IndexOf(']');
-                var leftboundArray = modifyEntry.Substring(0, rightboundArray).LastIndexOf('[');
-                var firstArray = modifyEntry.Substring(leftboundArray, rightboundArray - leftboundArray);
+                var leftEntry = numberPair.left;
+                var rightEntry = numberPair.right;
+                List<string> leftArrays = CreateArrays(leftEntry, new());
+                List<string> rightArrays = CreateArrays(rightEntry, new());
                 
-                Console.WriteLine(firstArray);
+                Console.WriteLine("Left ---- ");
+                leftArrays.ForEach(x => Console.WriteLine(x));
+                
+                Console.WriteLine("Right ---- ");
+                rightArrays.ForEach(x => Console.WriteLine(x));
 
-                var leftArray = Array.ConvertAll(
-                    numberPair.left.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+                if (leftArrays.Count != rightArrays.Count)
+                {
+                    Console.WriteLine($"Left = {leftArrays.Count} and right = {rightArrays.Count}");
+                    throw new Exception("WHUUT");
+                }
+                
+                for (var i = 0; i < leftArrays.Count; i++)
+                {
+                    var leftArray = Array.ConvertAll(
+                            leftArrays[i].Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c))
+                        .ToList();
 
-                var rightArray = Array.ConvertAll(
-                    numberPair.right.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+                    var rightArray = Array.ConvertAll(
+                            rightArrays[i].Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c))
+                        .ToList();
 
-                rightOrder = DetermineRightOrder(leftArray, rightOrder, rightArray, numberPair);
+                    if (!DetermineRightOrder(leftArray, rightOrder, rightArray, numberPair))
+                    {
+                        rightOrder = false;
+                    }
+                }
             }
 
             Console.WriteLine($"Checking for {index} - CONCLUSION {rightOrder}");
@@ -76,16 +95,27 @@ public class Distress
         var numbersArray = File.ReadLines(file).ToList();
         for (var idx = 0; idx < numbersArray.Count(); idx += 3)
         {
-            // List<int> leftRow = Array.ConvertAll(
-            //     numbersArray[idx].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
-            // List<int> rightRow = Array.ConvertAll(
-            //     numbersArray[idx + 1].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
-            // (List<int> leftRow, List<int> rightRow) test = (leftRow, rightRow);
-
             _numbers.Add((numbersArray[idx], numbersArray[idx + 1]));
         }
     }
 
+    private List<string> CreateArrays(string entry, List<string> arrays)
+    {
+        var rightboundArray = entry.IndexOf(']');
+        var leftboundArray = entry.Substring(0, rightboundArray).LastIndexOf('[') + 1;
+        var firstArray = entry.Substring(leftboundArray, rightboundArray - leftboundArray);
+        
+        arrays.Add(firstArray.Filter(_charsToFilter));
+
+        var remainingString = entry.Substring(rightboundArray + 1, entry.Length - rightboundArray - 1);
+        if (Regex.IsMatch(remainingString, ".*[0-9]+]"))
+        {
+            CreateArrays(remainingString, arrays);
+        }
+
+        return arrays;
+    }
+    
     private static bool DetermineRightOrder(List<int> leftArray, bool rightOrder, List<int> rightArray,
         (string left, string right) numberPair)
     {
@@ -131,3 +161,9 @@ public class Distress
 
     }
 }
+
+// List<int> leftRow = Array.ConvertAll(
+//     numbersArray[idx].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+// List<int> rightRow = Array.ConvertAll(
+//     numbersArray[idx + 1].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+// (List<int> leftRow, List<int> rightRow) test = (leftRow, rightRow);
