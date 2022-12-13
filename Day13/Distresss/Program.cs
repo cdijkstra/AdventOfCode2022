@@ -16,8 +16,9 @@ public static class Extensions
 
 public class Distress
 {
-    private List<List<(List<int> left, List<int> right)>> _numbers = new();
+    private List<(string left, string right)> _numbers = new();
     private int _indicesRightOrder = 0;
+    private readonly List<char> _charsToFilter = new() { '[', ',', ']' };
 
     public int SolveProblem1(string file)
     {
@@ -28,31 +29,33 @@ public class Distress
             var numberPair = _numbers[index];
             var rightOrder = true;
 
-            if (numberPair.left.Count == 0)
+            var numberOfArrays = numberPair.left.Count(x => x == '[');
+            if (numberOfArrays == 1)
             {
-                rightOrder = true;
+                var leftArray = Array.ConvertAll(
+                    numberPair.left.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+
+                var rightArray = Array.ConvertAll(
+                    numberPair.right.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+
+                rightOrder = DetermineRightOrder(leftArray, rightOrder, rightArray, numberPair);
             }
-            else if (numberPair.left.Count > numberPair.right.Count)
+            else if (numberOfArrays == 2)
             {
-                for (var idx = 0; idx != numberPair.right.Count; idx++)
-                {
-                    if (numberPair.left[idx] > numberPair.right[idx])
-                    {
-                        // Console.WriteLine($"2 - False for {index}");
-                        rightOrder = false;
-                    }
-                }
-            }
-            else if (numberPair.left.Count <= numberPair.right.Count)
-            {
-                for (var idx = 0; idx != numberPair.left.Count; idx++)
-                {
-                    if (numberPair.left[idx] > numberPair.right[idx])
-                    {
-                        // Console.WriteLine($"2 - False for {index}");
-                        rightOrder = false;
-                    }
-                }
+                var modifyEntry = numberPair.left;
+                var rightboundArray = modifyEntry.IndexOf(']');
+                var leftboundArray = modifyEntry.Substring(0, rightboundArray).LastIndexOf('[');
+                var firstArray = modifyEntry.Substring(leftboundArray, rightboundArray - leftboundArray);
+                
+                Console.WriteLine(firstArray);
+
+                var leftArray = Array.ConvertAll(
+                    numberPair.left.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+
+                var rightArray = Array.ConvertAll(
+                    numberPair.right.Filter(_charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+
+                rightOrder = DetermineRightOrder(leftArray, rightOrder, rightArray, numberPair);
             }
 
             Console.WriteLine($"Checking for {index} - CONCLUSION {rightOrder}");
@@ -69,36 +72,62 @@ public class Distress
     {
         _numbers.Clear();
         var charsToFilter = (new List<char>() { '[', ',', ']' });
-        
+
         var numbersArray = File.ReadLines(file).ToList();
         for (var idx = 0; idx < numbersArray.Count(); idx += 3)
         {
-            Console.Write($" Array = ");
-            foreach (var c in numbersArray[idx].Filter(charsToFilter).ToCharArray())
-            {
-                Console.Write(c);
-            }
-            Console.WriteLine();
-            
-            List<int> leftRow = Array.ConvertAll(
-                numbersArray[idx].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
-            List<int> rightRow = Array.ConvertAll(
-                numbersArray[idx + 1].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
-            (List<int> leftRow, List<int> rightRow) test = (leftRow, rightRow);
-            
-            _numbers.Add();
+            // List<int> leftRow = Array.ConvertAll(
+            //     numbersArray[idx].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+            // List<int> rightRow = Array.ConvertAll(
+            //     numbersArray[idx + 1].Filter(charsToFilter).ToCharArray(), c => (int)Char.GetNumericValue(c)).ToList();
+            // (List<int> leftRow, List<int> rightRow) test = (leftRow, rightRow);
+
+            _numbers.Add((numbersArray[idx], numbersArray[idx + 1]));
         }
     }
-}
 
-
-internal static class Program
-{
-    static void Main(string[] args)
+    private static bool DetermineRightOrder(List<int> leftArray, bool rightOrder, List<int> rightArray,
+        (string left, string right) numberPair)
     {
-        var treetop = new Distress();
-        treetop.SolveProblem1("dummydata.txt").Should().Be(13);
+        if (leftArray.Count == 0)
+        {
+            rightOrder = true;
+        }
+        else if (leftArray.Count > rightArray.Count)
+        {
+            for (var idx = 0; idx != rightArray.Count; idx++)
+            {
+                if (numberPair.left[idx] > numberPair.right[idx])
+                {
+                    rightOrder = false;
+                }
+            }
+        }
+        else if (leftArray.Count <= rightArray.Count)
+        {
+            for (var idx = 0; idx != leftArray.Count; idx++)
+            {
+                if (numberPair.left[idx] > numberPair.right[idx])
+                {
+                    // Console.WriteLine($"2 - False for {index}");
+                    rightOrder = false;
+                }
+            }
+        }
 
-        // Console.WriteLine($"Solutions are {solution1} and {solution2}");
+        return rightOrder;
+    }
+
+
+    internal static class Program
+    {
+        static void Main(string[] args)
+        {
+            var treetop = new Distress();
+            treetop.SolveProblem1("dummydata.txt").Should().Be(13);
+
+            // Console.WriteLine($"Solutions are {solution1} and {solution2}");
+        }
+
     }
 }
