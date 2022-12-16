@@ -140,13 +140,7 @@ public class Regolith
         {
             return (0, 0);
         }
-        if (_grid[position.y + 1][position.x] == '#')
-        {
-            Console.WriteLine($"Finished at {position.y},{position.x}");
-            // Finished
-            return position;
-        }
-        if (_grid[position.y + 1][position.x] == 'o')
+        if (_grid[position.y + 1][position.x] == '#' || _grid[position.y + 1][position.x] == 'o')
         {
             var toLeftDiagonal = GetFinalCoordinates((position.x - 1, position.y + 1));
             if (toLeftDiagonal != (0,0))
@@ -165,7 +159,7 @@ public class Regolith
             if (toLeftDiagonal == (0, 0) && toRightDiagonal == (0, 0))
             {
                 Console.WriteLine($"Finished UP at {position.y},{position.x}");
-                return (position.x, position.y);
+                return position;
             }
         }
 
