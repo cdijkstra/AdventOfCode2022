@@ -6,24 +6,26 @@ namespace RopeBridge;
 public class Regolith
 {
     private List<List<char>> _grid = new ();
+    private List<(int x, int y)> _sandCoordinates = new();
 
     private const int _xMax = 600;
     private const int _yMax = 600;
     
     public int SolveProblem1(string file)
     {
-        Initialize(file, 2);
+        Initialize(file);
         return SolvePuzzle(file);
     }
     
     public int SolveProblem2(string file)
     {
-        Initialize(file, 10);
+        Initialize(file);
         return SolvePuzzle(file);
     }
     
     private void Initialize(string file)
     {
+        _sandCoordinates.Clear();
         _grid.Clear();
         foreach (var idx in Enumerable.Range(0, _xMax))
         {
@@ -86,7 +88,50 @@ public class Regolith
 
     private int SolvePuzzle(string file)
     {
-        
+        var startPosition = (500, 0);
+
+        (int x, int y) position = startPosition; 
+        for (var sand = 0; sand != 5; sand++)
+        {
+            // Find position where it falls down
+            while (_grid[position.x][position.y - 1] != '#' && _grid[position.x][position.y - 1] != 'o')
+            {
+                position.y--;
+                Console.WriteLine("Falling");
+                _sandCoordinates.Add(GetFinalCoordinates(position));
+            }
+        }
+
+        return _sandCoordinates.Count;
+    }
+
+    private (int x, int y) GetFinalCoordinates((int x, int y) position)
+    {
+        while (_grid[position.x][position.y] != '.')
+        {
+            position.y--;
+        }
+        if (_grid[position.x][position.y - 1] != '#')
+        {
+            // Finished
+            return position;
+        }
+        if (_grid[position.x][position.y - 1] != 'o')
+        {
+            var toLeft = GetFinalCoordinates((position.x - 1, position.y - 1));
+            if (toLeft != (0,0))
+            {
+                return toLeft;
+            }
+            
+            var toRight = GetFinalCoordinates((position.x + 1, position.y - 1));
+            if (toLeft != (0,0))
+            {
+                return toLeft;
+            }
+        }
+
+        return (0, 0);
     }
 }
 
@@ -94,7 +139,7 @@ internal static class Program
 {
     static void Main(string[] args)
     {
-        var ropeBridge = new RopeBridge();
-        ropeBridge.SolveProblem1("dummydata.txt");
-
+        var regolith = new Regolith();
+        regolith.SolveProblem1("dummydata.txt");
+    }
 }
