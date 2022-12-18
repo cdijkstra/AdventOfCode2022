@@ -6,12 +6,13 @@ class Monkey
 {
     public int Number { get; set; } = new();
 
-    public Func<UInt64, UInt64> Operation { get; set; }
-    public List<UInt64> Items { get; set; } = new();
+    public Func<long, long> Operation { get; set; }
+
+    public List<long> Items { get; set; } = new();
     
-    public UInt64 DivisibleBy { get; set; } = new();
+    public long DivisibleBy { get; set; } = new();
 
     public List<int> ThrowToMonkey { get; set; } = new();
 
-    public int Inspections { get; set; } = 0;
+    public long Inspections { get; set; } = 0;
 }
