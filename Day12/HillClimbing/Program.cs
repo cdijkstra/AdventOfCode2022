@@ -113,10 +113,15 @@ internal static class Program
 {
     static async Task Main(string[] args)
     {
-        var hill = new Hill();
-        hill.SolveProblem1("dummydata.txt").Result.Should().Be(31);
-        var solution1 = await hill.SolveProblem1("data.txt");
-        Console.WriteLine(solution1);
+        // var hill = new Hill();
+        // hill.SolveProblem1("dummydata.txt").Result.Should().Be(31);
+        // var solution1 = await hill.SolveProblem1("data.txt");
+        // Console.WriteLine(solution1);
+
+        char test = 'E';
+        char test2 = 'a';
+        Console.WriteLine(test + 1);
+        Console.WriteLine(test2);
         // var solution2 = ropeBridge.SolveProblem2("data.txt");
         //
         // Console.WriteLine($"Solutions are {solution1} and {solution2}");
