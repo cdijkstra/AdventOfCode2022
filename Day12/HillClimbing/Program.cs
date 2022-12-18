@@ -31,17 +31,17 @@ public class Hill
         length++;
 
         var neighbors = FindNeighborsToVisit(coordinates).Where(neighbor => !placesVisited.Contains(neighbor));
-        foreach (var valueTuple in neighbors)
-        {
-            Console.WriteLine($"Visiting {valueTuple.x},{valueTuple.y} from {coordinates.x},{coordinates.y} and length {length}");
-        }
+        // foreach (var valueTuple in neighbors)
+        // {
+        //     Console.WriteLine($"Visiting {valueTuple.x},{valueTuple.y} from {coordinates.x},{coordinates.y} and length {length}");
+        // }
 
         foreach (var neighborToVisit in neighbors)
         {
             await SolvePuzzle(neighborToVisit, length, placesVisited);
         }
 
-        if (_grid[coordinates.x][coordinates.y] == 'E')
+        if (_grid[coordinates.x][coordinates.y] == '{')
         {
             _routeLengths.Add(length);
         }
@@ -52,38 +52,26 @@ public class Hill
     private List<(int x, int y)> FindNeighborsToVisit((int x, int y) coordinates)
     {
         List<(int x, int y)> neighborsToVisit = new();
-        if (coordinates.x > 0 && 
-            char.IsLetter(_grid[coordinates.x - 1][coordinates.y]) &&
-            (_grid[coordinates.x - 1][coordinates.y] <= _grid[coordinates.x][coordinates.y] + 1 ||
-             _grid[coordinates.x - 1][coordinates.y] == _grid[coordinates.x][coordinates.y] || 
-             (_grid[coordinates.x - 1][coordinates.y] == 'E' && _grid[coordinates.x][coordinates.y] == 'z')))
+        if (coordinates.x > 0 &&
+            (_grid[coordinates.x - 1][coordinates.y] <= _grid[coordinates.x][coordinates.y] + 1))
         {
             neighborsToVisit.Add((coordinates.x - 1, coordinates.y));
         }
 
         if (coordinates.x < _grid.Count - 1 &&
-            char.IsLetter(_grid[coordinates.x + 1][coordinates.y]) &&
-            (_grid[coordinates.x + 1][coordinates.y] == _grid[coordinates.x][coordinates.y] + 1 ||
-             _grid[coordinates.x + 1][coordinates.y] == _grid[coordinates.x][coordinates.y] || 
-             (_grid[coordinates.x + 1][coordinates.y] == 'E' && _grid[coordinates.x][coordinates.y] == 'z')))
+            (_grid[coordinates.x + 1][coordinates.y] <= _grid[coordinates.x][coordinates.y] + 1))
         {
             neighborsToVisit.Add((coordinates.x + 1, coordinates.y));
         }
 
-        if (coordinates.y > 0 && 
-            char.IsLetter(_grid[coordinates.x][coordinates.y - 1]) &&
-            (_grid[coordinates.x][coordinates.y - 1] == _grid[coordinates.x][coordinates.y] + 1 ||
-             _grid[coordinates.x][coordinates.y - 1] == _grid[coordinates.x][coordinates.y] || 
-             (_grid[coordinates.x][coordinates.y - 1] == 'E' && _grid[coordinates.x][coordinates.y] == 'z')))
+        if (coordinates.y > 0 &&
+            (_grid[coordinates.x][coordinates.y - 1] <= _grid[coordinates.x][coordinates.y] + 1))
         {
             neighborsToVisit.Add((coordinates.x, coordinates.y - 1));
         }
 
         if (coordinates.y < _grid.First().Count - 1 &&
-            char.IsLetter(_grid[coordinates.x][coordinates.y + 1]) && 
-            (_grid[coordinates.x][coordinates.y + 1] == _grid[coordinates.x][coordinates.y] + 1 ||
-             _grid[coordinates.x][coordinates.y + 1] == _grid[coordinates.x][coordinates.y] || 
-             (_grid[coordinates.x][coordinates.y + 1] == 'E' && _grid[coordinates.x][coordinates.y] == 'z')))
+            (_grid[coordinates.x][coordinates.y + 1] <= _grid[coordinates.x][coordinates.y] + 1))
         {
             neighborsToVisit.Add((coordinates.x, coordinates.y + 1));
         }
@@ -93,6 +81,7 @@ public class Hill
 
     private (int x, int y) findStartIndex()
     {
+        ReplaceLastIndex();
         for (var idx = 0; idx != _grid.Count; idx++)
         {
             for (var idy = 0; idy != _grid.First().Count; idy++)
@@ -107,21 +96,31 @@ public class Hill
 
         return (0, 0);
     }
+    
+    private void ReplaceLastIndex()
+    {
+        for (var idx = 0; idx != _grid.Count; idx++)
+        {
+            for (var idy = 0; idy != _grid.First().Count; idy++)
+            {
+                if (_grid[idx][idy] == 'E')
+                {
+                    _grid[idx][idy] = '{'; // = 'z' + 1
+                }
+            }
+        }
+    }
 }
 
 internal static class Program
 {
     static async Task Main(string[] args)
     {
-        // var hill = new Hill();
-        // hill.SolveProblem1("dummydata.txt").Result.Should().Be(31);
-        // var solution1 = await hill.SolveProblem1("data.txt");
-        // Console.WriteLine(solution1);
-
-        char test = 'E';
-        char test2 = 'a';
-        Console.WriteLine(test + 1);
-        Console.WriteLine(test2);
+        var hill = new Hill();
+        hill.SolveProblem1("dummydata.txt").Result.Should().Be(31);
+        var solution1 = await hill.SolveProblem1("data.txt");
+        Console.WriteLine(solution1);
+        
         // var solution2 = ropeBridge.SolveProblem2("data.txt");
         //
         // Console.WriteLine($"Solutions are {solution1} and {solution2}");

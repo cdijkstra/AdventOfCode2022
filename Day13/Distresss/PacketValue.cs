@@ -38,23 +38,31 @@ public class PacketValue : IComparable<PacketValue>, IComparable
     {
         if (left.IsArray)
         {
+            Console.WriteLine("Left is array");
             if (right.IsArray)
             {
+                Console.WriteLine("Right is array");
                 return CompareArrays(left.ArrayValue, right.ArrayValue);
             }
-            
-            var rightArray = new[] { right };
-            return CompareArrays(left.ArrayValue, rightArray);
+            else
+            {
+                Console.WriteLine("Right is int");
+                var rightArray = new[] { right };
+                return CompareArrays(left.ArrayValue, rightArray);
+            }
         }
 
+        Console.WriteLine($"Left is int {left.IntValue}");
         if (right.IsArray)
         {
+            Console.WriteLine("Right is array");
             // Compare integer with array
             var leftArray = new[] { left };
             return CompareArrays(leftArray, right.ArrayValue);
         }
         else
         {
+            Console.WriteLine($"right is int {right.IntValue}");
             // Compare two integers
             return (left.IntValue.Value - right.IntValue.Value);
         }

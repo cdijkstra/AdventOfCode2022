@@ -11,16 +11,21 @@ public class Distress
     public int SolveProblem1(string file)
     {
         Initialize(file);
-        for (var index = 1; index <= _numbers.Count; index++)
+        for (var index = 0; index < _numbers.Count; index++)
         {
             var numberSet = _numbers[index];
-            var left = JsonSerializer.Deserialize(numberSet.left, PacketValueContext.Default.PacketValue;
+            var left = JsonSerializer.Deserialize(numberSet.left, PacketValueContext.Default.PacketValue);
             var right = JsonSerializer.Deserialize(numberSet.right, PacketValueContext.Default.PacketValue);
 
             // Check if its in the right order
             if (left.CompareTo(right) < 0)
             {
+                Console.WriteLine($"Concluded TRUE for {index + 1}");
                 _indicesRightOrder += index;
+            }
+            else
+            {
+                Console.WriteLine($"Concluded FALSE for {index + 1}");
             }
         }
 
