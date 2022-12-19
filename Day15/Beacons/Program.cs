@@ -6,7 +6,20 @@ public class Beacons
 {
     private List<Sensor> _sensors = new();
     private List<Coordinate> _excludedPointsRow = new();
-    HashSet<Coordinate> _toCheck = new();
+
+    public int SolveProblem1(string file, int row)
+    {
+        Initialize(file);
+        FillRow(row);
+
+        return _excludedPointsRow.Distinct().Count();
+    }
+    
+    public long SolveProblem2(string file, int upperlimit)
+    {
+        Initialize(file);
+        return Solvepuzzle2(upperlimit);
+    }
     
     private void FillRow(int row)
     {
@@ -14,62 +27,74 @@ public class Beacons
         {
             for (var idy = -valueTuple.DistanceToBeacon; idy <= valueTuple.DistanceToBeacon; idy++)
             {
-                if (valueTuple.Position.y + idy == row)
+                if (valueTuple.Position.y + idy != row) continue;
+                for (var idx = -valueTuple.DistanceToBeacon + Math.Abs(idy); idx <= valueTuple.DistanceToBeacon - Math.Abs(idy); idx++)
                 {
-                    for (var idx = -valueTuple.DistanceToBeacon + Math.Abs(idy); idx <= valueTuple.DistanceToBeacon - Math.Abs(idy); idx++)
-                    {
-                        _excludedPointsRow.Add(new Coordinate() { x = valueTuple.Position.x + idx, y = valueTuple.Position.y + idy });
-                    }
+                    _excludedPointsRow.Add(new Coordinate() { x = valueTuple.Position.x + idx, y = valueTuple.Position.y + idy });
                 }
             }
         }
 
-        foreach (var valueTuple in _sensors)
+        foreach (var beacon in _sensors.Select(valueTuple => valueTuple.ClosestBeacon).Where(beacon => _excludedPointsRow.Contains(beacon.Position)))
         {
-            var beacon = valueTuple.ClosestBeacon;
-            if (_excludedPointsRow.Contains(beacon.Position))
-            {
-                _excludedPointsRow.Remove(beacon.Position);
-            }
+            _excludedPointsRow.Remove(beacon.Position);
         }
     }
     
     private long Solvepuzzle2(int upperLimit)
     {
-        foreach (var valueTuple in _sensors)
+        foreach (var sensor in _sensors)
         {
-            // Get coordinates next to Manhattan circle
-            var left = new Coordinate() { x = valueTuple.Position.x - valueTuple.DistanceToBeacon - 1, y = valueTuple.Position.y };
-            var right = new Coordinate() { x = valueTuple.Position.x + valueTuple.DistanceToBeacon + 1, y = valueTuple.Position.y } ;
-            var up = new Coordinate() { x = valueTuple.Position.x, y = valueTuple.Position.y + valueTuple.DistanceToBeacon + 1 };
-            var down = new Coordinate() { x = valueTuple.Position.x, y = valueTuple.Position.y - valueTuple.DistanceToBeacon - 1 } ;
-
-            var edgeCoordinates = new List<Coordinate>();
-            edgeCoordinates.AddRange(GetCoordinatesBetween(left, up));
-            edgeCoordinates.AddRange(GetCoordinatesBetween(down, right));
-            edgeCoordinates.AddRange(GetCoordinatesBetween(up, right));
-            edgeCoordinates.AddRange(GetCoordinatesBetween(left, down));
-
-            foreach (var edgeCoordinate in edgeCoordinates)
+            foreach (var edgeCoordinate in RetrieveEdgeCoordinates(sensor))
             {
-                if (edgeCoordinate.x >= 0 && edgeCoordinate.x <= upperLimit &&
-                    edgeCoordinate.y >= 0 && edgeCoordinate.y <= upperLimit)
+                if (InvalidRange(upperLimit, edgeCoordinate)) continue;
+                
+                if (CoordinatesNotWithinRange(edgeCoordinate))
                 {
-                    if (edgeCoordinate.x == 14 && edgeCoordinate.y == 11)
-                    {
-                        
-                    }
-                    
-                    if (!_sensors.Any(sens => sens.DistanceToBeacon >= sens.DistanceTo(edgeCoordinate)))
-                    {
-                        return edgeCoordinate.x * 4000000 + edgeCoordinate.y;
-                    }
+                    return TuningFrequency(edgeCoordinate);
                 }
             }
         }
+        
         return 0;
     }
-    
+
+    private static long TuningFrequency(Coordinate edgeCoordinate)
+    {
+        return edgeCoordinate.x * 4000000 + edgeCoordinate.y;
+    }
+
+    private bool CoordinatesNotWithinRange(Coordinate edgeCoordinate)
+    {
+        return !_sensors.Any(sens => sens.DistanceToBeacon >= sens.DistanceTo(edgeCoordinate));
+    }
+
+    private static bool InvalidRange(int upperLimit, Coordinate edgeCoordinate)
+    {
+        return edgeCoordinate.x < 0 || edgeCoordinate.x > upperLimit ||
+               edgeCoordinate.y < 0 || edgeCoordinate.y > upperLimit;
+    }
+
+    private static List<Coordinate> RetrieveEdgeCoordinates(Sensor valueTuple)
+    {
+        // Get coordinates next to Manhattan circle
+        var left = new Coordinate()
+            { x = valueTuple.Position.x - valueTuple.DistanceToBeacon - 1, y = valueTuple.Position.y };
+        var right = new Coordinate()
+            { x = valueTuple.Position.x + valueTuple.DistanceToBeacon + 1, y = valueTuple.Position.y };
+        var up = new Coordinate()
+            { x = valueTuple.Position.x, y = valueTuple.Position.y + valueTuple.DistanceToBeacon + 1 };
+        var down = new Coordinate()
+            { x = valueTuple.Position.x, y = valueTuple.Position.y - valueTuple.DistanceToBeacon - 1 };
+
+        var edgeCoordinates = new List<Coordinate>();
+        edgeCoordinates.AddRange(GetCoordinatesBetween(left, up));
+        edgeCoordinates.AddRange(GetCoordinatesBetween(down, right));
+        edgeCoordinates.AddRange(GetCoordinatesBetween(up, right));
+        edgeCoordinates.AddRange(GetCoordinatesBetween(left, down));
+        return edgeCoordinates;
+    }
+
     private static IEnumerable<Coordinate> GetCoordinatesBetween(Coordinate start, Coordinate end)
     {
         var (left, right) = start.x <= end.x ? (start, end) : (end, start);
@@ -92,20 +117,6 @@ public class Beacons
 
         return coordinates;
     }
-    
-    public int SolveProblem1(string file, int row)
-    {
-        Initialize(file);
-        FillRow(row);
-
-        return _excludedPointsRow.Distinct().Count();
-    }
-    
-    public long SolveProblem2(string file, int upperlimit)
-    {
-        Initialize(file);
-        return Solvepuzzle2(upperlimit);
-    }
 
     private void Initialize(string file)
     {
@@ -113,20 +124,29 @@ public class Beacons
         _excludedPointsRow.Clear();
         _sensors.Clear();
 
-        foreach (var command in File.ReadLines($"../../../{file}"))
+        foreach (var command in File.ReadLines(file))
         {
-            // (int x, int y, int xBeacon, int yBeacon, int distanceBeacon) newEntry = new();
-            Sensor sensor = new();
-            var sensorX = int.Parse(command.Substring(command.IndexOf("x") + 2, command.IndexOf(",") - command.IndexOf("x") - 2));
-            var sensorY = int.Parse(command.Substring(command.IndexOf("y") + 2, command.IndexOf(":") - command.IndexOf("y") - 2));
-            sensor.Position = new Coordinate() { x = sensorX, y = sensorY };
-
-            Beacon beacon = new();
-            var xBeacon = int.Parse(command.Substring(command.LastIndexOf("x") + 2, command.LastIndexOf(",") - command.LastIndexOf("x") - 2));
-            var yBeacon = int.Parse(command.Substring(command.LastIndexOf("y") + 2, command.Length - command.LastIndexOf("y") - 2));
-            beacon.Position = new Coordinate() { x = xBeacon, y = yBeacon };
-
-            sensor.ClosestBeacon = beacon;
+            Beacon beacon = new()
+            {
+                Position =
+                {
+                    x = int.Parse(command.Substring(command.LastIndexOf("x") + 2,
+                        command.LastIndexOf(",") - command.LastIndexOf("x") - 2)),
+                    y = int.Parse(command.Substring(command.LastIndexOf("y") + 2,
+                        command.Length - command.LastIndexOf("y") - 2))
+                }
+            };
+            
+            Sensor sensor = new()
+            {
+                Position =
+                {
+                    x = int.Parse(command.Substring(command.IndexOf("x") + 2, command.IndexOf(",") - command.IndexOf("x") - 2)),
+                    y = int.Parse(command.Substring(command.IndexOf("y") + 2, command.IndexOf(":") - command.IndexOf("y") - 2))
+                },
+                ClosestBeacon = beacon
+            };
+            
             _sensors.Add(sensor);
         }
     }
