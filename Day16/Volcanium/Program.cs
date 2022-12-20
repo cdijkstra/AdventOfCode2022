@@ -8,34 +8,39 @@ public class Cave
     private List<Valve> _valves = new();
     private List<int> _pressureReleases = new();
     
-    public int SolveProblem1(string file, int row)
+    public async Task<int> SolveProblem1(string file, int row)
     {
         Initialize(file);
-        FindPath("AA", 30, 0, 0);
-        return 1651;
+
+        var valves = _valves;
+        await Traverse("AA", 30, 0, 0, valves);
+        Console.WriteLine($"Found {_pressureReleases.Max()}");
+        return _pressureReleases.Max();
     }
 
-    private void FindPath(string name, int minutes, int pressureReleased, int flow)
+    private async Task Traverse(string name, int minutes, int pressureReleased, int flow, List<Valve> valves, string path = "")
     {
-        if (minutes == 0)
+        if (minutes > 0)
         {
-            _pressureReleases.Add(pressureReleased);
-            return;
-        }
-        
-        var valve = _valves.Single(valve => valve.Name == name);
-        foreach (var valveConnectedValve in valve.ConnectedValves)
-        {
-            FindPath(valveConnectedValve.Name, minutes--, pressureReleased + flow, flow);
-        }
+            Console.WriteLine($"{path} and {pressureReleased}");
 
-        if (valve.Open || valve.Flow <= 0) return;
+            var valve = valves.Single(valve => valve.Name == name);
+            foreach (var valveConnectedValve in valve.ConnectedValves)
+            {
+                await Traverse(valveConnectedValve.Name, --minutes, pressureReleased + flow, flow, valves, path += name);
+                if (!valve.Open && valve.Flow > 0)
+                {
+                    Console.WriteLine("Opening");
+                    valve.Open = true;
+                    flow += valve.Flow;
+                    await Traverse(name, --minutes, pressureReleased + flow, flow, valves);
+                }
+            }
+        }
         
-        valve.Open = true;
-        flow += valve.Flow;
-        FindPath(name, minutes--, pressureReleased + flow, flow);
+        _pressureReleases.Add(pressureReleased);
     }
-    
+
     private void Initialize(string file)
     {
         foreach (var command in File.ReadLines(file))
@@ -69,10 +74,12 @@ public class Cave
 
 internal static class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         var cave = new Cave();
-        cave.SolveProblem1("dummydata.txt", 10).Should().Be(1651);
+        var answer = await cave.SolveProblem1("dummydata.txt", 10);
+        Console.WriteLine($"Answer = {answer}");
+        answer.Should().Be(1651);
         // beacon.SolveProblem2("dummydata.txt", 20).Should().Be(56000011);
         // var answer1 = beacon.SolveProblem1("data.txt", 2000000);
         // var answer2 = beacon.SolveProblem2("data.txt", 4000000);
