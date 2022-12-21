@@ -20,12 +20,12 @@ public class Distress
             // Check if its in the right order
             if (left.CompareTo(right) < 0)
             {
-                Console.WriteLine($"Concluded TRUE for {index + 1}");
-                _indicesRightOrder += index;
+                Console.WriteLine($"Concluded TRUE for {index + 1} with {left.CompareTo(right)}");
+                _indicesRightOrder += (index + 1);
             }
             else
             {
-                Console.WriteLine($"Concluded FALSE for {index + 1}");
+                Console.WriteLine($"Concluded FALSE for {index + 1} with {left.CompareTo(right)}");
             }
         }
 
@@ -50,6 +50,8 @@ public class Distress
         {
             var distress = new Distress();
             distress.SolveProblem1("dummydata.txt").Should().Be(13);
+            var answer1 = distress.SolveProblem1("data.txt");
+            Console.WriteLine(answer1);
         }
     }
 }

@@ -26,6 +26,13 @@ public class PacketValue : IComparable<PacketValue>, IComparable
     
     public PacketValue[]? ArrayValue { get; }
 
+     public int CompareTo(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return 1;
+        if (ReferenceEquals(this, obj)) return 0;
+        return obj is PacketValue other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(PacketValue)}");
+    }
+
     public int CompareTo(PacketValue? second)
     {
         if (ReferenceEquals(this, second)) return 0;
@@ -33,65 +40,65 @@ public class PacketValue : IComparable<PacketValue>, IComparable
         
         return ComparePacketValues(this, second);
     }
-
-    private static int ComparePacketValues(PacketValue left, PacketValue right)
+    
+    private static int ComparePacketValues(PacketValue first, PacketValue second)
     {
-        if (left.IsArray)
+        if (first.IsArray)
         {
-            Console.WriteLine("Left is array");
-            if (right.IsArray)
+            if (second.IsArray)
             {
-                Console.WriteLine("Right is array");
-                return CompareArrays(left.ArrayValue, right.ArrayValue);
+                return CompareArrays(first.ArrayValue, second.ArrayValue);
             }
             else
             {
-                Console.WriteLine("Right is int");
-                var rightArray = new[] { right };
-                return CompareArrays(left.ArrayValue, rightArray);
+                // Condition 3 - one list / one int
+                var secondWrapper = new[] { second };
+                return CompareArrays(first.ArrayValue, secondWrapper);
             }
-        }
-
-        Console.WriteLine($"Left is int {left.IntValue}");
-        if (right.IsArray)
-        {
-            Console.WriteLine("Right is array");
-            // Compare integer with array
-            var leftArray = new[] { left };
-            return CompareArrays(leftArray, right.ArrayValue);
         }
         else
         {
-            Console.WriteLine($"right is int {right.IntValue}");
-            // Compare two integers
-            return (left.IntValue.Value - right.IntValue.Value);
-        }
-    }
-
-    private static int CompareArrays(PacketValue[] first, PacketValue[] second)
-    {
-        if (first.Length > second.Length)
-        {
-            return -1;
-        }
-
-        for (var idx = 0; idx != first.Length; idx++)
-        {
-            var compared = first[idx].CompareTo(second[idx]);
-            if (compared != 0)
+            if (second.IsArray)
             {
-                return compared;
+                // Condition 3 - one int / one list
+                // Condition 3 - one list / one int
+                var firstWrapped = new[] { first };
+                return CompareArrays(firstWrapped, second.ArrayValue);
+            }
+            else
+            {
+                // Condition 1 - both ints.
+                // Lower value should come first.
+                return first.IntValue.Value - second.IntValue.Value;
             }
         }
-        
+    }
+    
+    private static int CompareArrays(PacketValue[] first, PacketValue[] second)
+    {
+        // Condition 2 - both are lists
+        // Compare each value one-by-one:
+        var end = Math.Max(first.Length, second.Length);
+        for (var i = 0; i < end; i++)
+        {
+            // If first runs out of items first, then they are in order.
+            if (i >= first.Length)
+                return -1;
+
+            // If second runs out of items first, then they are out of order.
+            if (i >= second.Length)
+                return 1;
+
+            // Compare each item.
+            // If there is a difference, then that is the result.
+            var itemResult = first[i].CompareTo(second[i]);
+            if (itemResult != 0)
+            {
+                return itemResult;
+            }
+        }
+
         // Otherwise they are equal
         return 0;
-    }
-
-    public int CompareTo(object? obj)
-    {
-        if (ReferenceEquals(null, obj)) return 1;
-        if (ReferenceEquals(this, obj)) return 0;
-        return obj is PacketValue other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(PacketValue)}");
     }
 }
