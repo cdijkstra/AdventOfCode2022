@@ -32,6 +32,31 @@ public class Distress
         return _indicesRightOrder;
     }
 
+    public int SolveProblem2(string file)
+    {
+        Initialize(file);
+        // Start with the two divider packets
+        var divider1 = new PacketValue(new[] { new PacketValue(new[] { new PacketValue(2) }) }); // [[2]]
+        var divider2 = new PacketValue(new[] { new PacketValue(new[] { new PacketValue(6) }) }); // [[6]]
+        var packets = new List<PacketValue> { divider1, divider2 };
+        
+        // Add each packet from input
+        foreach (var numberSet in _numbers)
+        {
+            var left = JsonSerializer.Deserialize(numberSet.left, PacketValueContext.Default.PacketValue);
+            var right = JsonSerializer.Deserialize(numberSet.right, PacketValueContext.Default.PacketValue);
+            packets.Add(left);
+            packets.Add(right);
+        }
+        
+        packets.Sort();
+        // Find divider packets
+        var divider1Index = packets.IndexOf(divider1) + 1;
+        var divider2Index = packets.IndexOf(divider2) + 1;
+        var decoderKey = divider1Index * divider2Index;
+        return decoderKey;
+    }
+
     private void Initialize(string file)
     {
         _numbers.Clear();
@@ -50,6 +75,7 @@ public class Distress
         {
             var distress = new Distress();
             distress.SolveProblem1("dummydata.txt").Should().Be(13);
+            distress.SolveProblem2("dummydata.txt").Should().Be(140);
             var answer1 = distress.SolveProblem1("data.txt");
             Console.WriteLine(answer1);
         }
