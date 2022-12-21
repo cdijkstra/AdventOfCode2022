@@ -77,7 +77,8 @@ public class Distress
             distress.SolveProblem1("dummydata.txt").Should().Be(13);
             distress.SolveProblem2("dummydata.txt").Should().Be(140);
             var answer1 = distress.SolveProblem1("data.txt");
-            Console.WriteLine(answer1);
+            var answer2 = distress.SolveProblem2("data.txt");
+            Console.WriteLine($"Answers are {answer1} and {answer2}");
         }
     }
 }
