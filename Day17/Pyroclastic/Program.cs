@@ -247,7 +247,7 @@ public class Pyroclastic
             }
         }
 
-        for (var rockPart = heightRock - 1; rockPart >= 0; rockPart--)
+        for (var rockPart = 0; rockPart <= heightRock - 1; rockPart++)
         {
             Console.WriteLine($"Adding rock with {heightRock}, {bottom}, {rockPart}, {_cave.Count()}");
             List<char> newEntry = new() { '|', '.', '.' };
