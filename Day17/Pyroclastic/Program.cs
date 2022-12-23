@@ -25,23 +25,37 @@ public class Pyroclastic
     private void ApplyJetAndFall()
     {
         // Fall down while possible
-        while (FindLowestHeightRock() > FindBottom() || !FindLowestXPositionsRock().Intersect(FindXPositionsFloor()).Any())
+        bool continueFalling = true;
+        while (continueFalling)
         {
+            // Apply jet and fall
+            ApplyJet();
+            continueFalling = RockFalling();
+            
             for (var idx = 0; idx != _cave.Count(); idx++)
             {
                 _cave[idx].ForEach(x => Console.Write(x));
                 Console.WriteLine("");
             }
-            
-            Console.WriteLine("Floor");
-            FindXPositionsFloor().ForEach(x => Console.Write(x));
-        
-            Console.WriteLine("Rock");
-            FindLowestXPositionsRock().ForEach(x => Console.Write(x));
-            
-            // Apply jet and fall
-            ApplyJet();
-            RockFalling();
+        }
+    }
+
+    private void ConvertToNotFallingRock()
+    {
+        Console.WriteLine("Done");
+        for (var idx = 0; idx != _cave.Count(); idx++)
+        {
+            // Find first match
+            if (!_cave[idx].Contains('@')) continue;
+            List<char> newEntry = new();
+            foreach (var ch in _cave[idx])
+            {
+                newEntry.Add(ch == '@' ? '#' : ch);
+            }
+
+            var updatedEntry = newEntry;
+
+            _cave[idx] = updatedEntry;
         }
     }
 
@@ -55,14 +69,17 @@ public class Pyroclastic
         List<int> match = new();
         for (var idx = 0; idx != _cave.Count(); idx++)
         {
-            if (!_cave[idx].Contains('@')) continue;
+            if (!matches.Any(match => _cave[idx].Contains(match))) continue;
             // First occurrence is lowest position of rock
             
-            Console.WriteLine($"Match at {idx}");
             match = Enumerable.Range(0, _cave[idx].Count)
                 .Where(i => matches.Contains(_cave[idx][i]))
                 .ToList();
 
+            Console.WriteLine($"MATCH ROCK at {idx}: ");
+            match.ForEach(x => Console.Write(x));
+            Console.WriteLine("DONE");
+            
             return match;
         }
 
@@ -75,23 +92,28 @@ public class Pyroclastic
         {
             '-', '#'
         };
-        
+
         List<int> match = new();
         for (var idx = _cave.Count() - 1; idx >= 0; idx--)
         {
-            if (!matches.Any(match => _cave[idx].Contains(match))) continue;
+            if (!matches.Any(match => _cave[idx].Contains(match) && !_cave[idx].Contains('@'))) continue;
             // First occurrence is lowest position of rock
             
             match = Enumerable.Range(0, _cave[idx].Count)
                 .Where(i => matches.Contains(_cave[idx][i]))
                 .ToList();
+            
+            Console.WriteLine("MATCH FLOOR: ");
+            match.ForEach(x => Console.Write(x));
+            Console.WriteLine("DONE");
+            
             break;
         }
 
         return match;
     }
     
-    private int FindLowestHeightRock()
+    private int FindLowestRockYPosition()
     {
         int lowestHeightRock = 0;
         for (var idx = 0; idx != _cave.Count(); idx++)
@@ -123,16 +145,27 @@ public class Pyroclastic
         
         if (_jetPattern[_currentIndex] == '<' && left != 1)
         {
-            foreach (var entry in _cave.Where(entry => entry.Contains('@')))
+            bool applyMove = true;
+            for (var idy = 0; idy != _cave.Count(); idy++)
             {
-                entry[entry.IndexOf('@') - 1] = '@';
-                entry[entry.LastIndexOf('@')] = '.';
+                applyMove = _cave[idy].IndexOf('@') - 1 != '#';
+            }
+
+            if (applyMove)
+            {
+                foreach (var entry in _cave.Where(entry => entry.Contains('@')))
+                {
+                    if (entry.IndexOf('@') - 1 == '#') break;
+                    entry[entry.IndexOf('@') - 1] = '@';
+                    entry[entry.LastIndexOf('@')] = '.';
+                }
             }
         }
         else if (_jetPattern[_currentIndex] == '>' && right != 7)
         {
             foreach (var entry in _cave.Where(entry => entry.Contains('@')))
             {
+                if (entry[entry.LastIndexOf('@') + 1] == '#') break;
                 entry[entry.LastIndexOf('@') + 1] = '@';
                 entry[entry.IndexOf('@')] = '.';
             }
@@ -141,38 +174,60 @@ public class Pyroclastic
         _currentIndex = (_currentIndex + 1) % _jetPattern.Count();
     }
 
-    private void RockFalling()
+    private bool RockFalling()
     {
-        int lowestHeightRock = FindLowestHeightRock();
-        if (lowestHeightRock > FindBottom() + 1)
+        Console.WriteLine("FALLDOWN");
+        int lowestHeightRock = FindLowestRockYPosition();
+        if (lowestHeightRock > FindBottomYPosition() + 1)
         {
-            // Fall down
-            Console.WriteLine($"Bla {lowestHeightRock} and {FindBottom()}");
+            Console.WriteLine($"Bla {lowestHeightRock} and {FindBottomYPosition()}");
             _cave.RemoveAt(lowestHeightRock - 1);
+            return true;
         }
-        else if (lowestHeightRock == FindBottom() + 1)
+        
+        if (!FindLowestXPositionsRock().Intersect(FindXPositionsFloor()).Any())
         {
+            // Fall down once more, but now more complex since it falls on floor
+            Console.WriteLine("SPECIAL: CASE");
+            var lowestRock = _cave[FindLowestRockYPosition()];
+            var newBottom = new List<char>();
+            for (var idx = 0; idx != _cave[FindBottomYPosition()].Count(); idx++)
+            {
+                newBottom.Add(lowestRock[idx] == '@' ? '@' : _cave[FindBottomYPosition()][idx]);
+            }
+            
+            Console.WriteLine($"{FindBottomYPosition()} and {FindLowestRockYPosition()}");
             for (var idx = 0; idx != _cave.Count(); idx++)
             {
-                if (_cave[idx].Contains('@'))
-                {
-                    List<char> newEntry = new();
-                    foreach (var ch in _cave[idx])
-                    {
-                        newEntry.Add(ch == '@' ? '#' : ch);
-                    }
-                    var updatedEntry = newEntry;
-
-                    _cave[idx] = updatedEntry;
-                }
+                _cave[idx].ForEach(x => Console.Write(x));
+                Console.WriteLine("");
             }
+            
+            _cave.RemoveAt(FindLowestRockYPosition());
+            for (var idx = 0; idx != _cave.Count(); idx++)
+            {
+                _cave[idx].ForEach(x => Console.Write(x));
+                Console.WriteLine("");
+            }
+            
+            _cave[FindBottomYPosition()] = newBottom;
+            for (var idx = 0; idx != _cave.Count(); idx++)
+            {
+                _cave[idx].ForEach(x => Console.Write(x));
+                Console.WriteLine("");
+            }
+            
+            return true;
         }
+
+        ConvertToNotFallingRock();
+        return false;
     }
 
     private void PlaceRock(List<char> rock)
     {
         // Find bottom
-        var bottom = FindBottom();
+        var bottom = FindBottomYPosition();
         // Find height rock
         var heightRock = rock.Count() / 4;
         var highestHeightInCave = bottom + 4 + heightRock;
@@ -202,7 +257,7 @@ public class Pyroclastic
         }
     }
 
-    private int FindBottom()
+    private int FindBottomYPosition()
     {
         for (var idx = _cave.Count() - 1; idx > 0; idx--)
         {
@@ -231,7 +286,7 @@ public class Pyroclastic
         _jetPattern = File.ReadAllText(file).ToList();
         
         var newRockEntry = new List<char>();
-        var input = File.ReadLines("input.txt");
+        var input = File.ReadLines("simpleinput.txt");
 
         for (var idx = 0; idx != input.Count(); idx++)
         {
