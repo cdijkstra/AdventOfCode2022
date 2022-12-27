@@ -13,13 +13,19 @@ public class Pyroclastic
     {
         Initialize(file);
 
-        foreach (var rock in _rocks)
+        for (var repeats = 0; repeats != 9; repeats++)
         {
-            PlaceRock(rock);
+            PlaceRock(_rocks[repeats % _rocks.Count()]);
             ApplyJetAndFall();
         }
+        
+        foreach (var chars in _cave)
+        {
+            chars.ForEach(x => Console.Write(x));
+            Console.WriteLine();
+        }
 
-        return 1;
+        return _cave.Count();
     }
 
     private void ApplyJetAndFall()
@@ -31,18 +37,11 @@ public class Pyroclastic
             // Apply jet and fall
             ApplyJet();
             continueFalling = RockFalling();
-            
-            for (var idx = 0; idx != _cave.Count(); idx++)
-            {
-                _cave[idx].ForEach(x => Console.Write(x));
-                Console.WriteLine("");
-            }
         }
     }
 
     private void ConvertToNotFallingRock()
     {
-        Console.WriteLine("Done");
         for (var idx = 0; idx != _cave.Count(); idx++)
         {
             // Find first match
@@ -76,10 +75,6 @@ public class Pyroclastic
                 .Where(i => matches.Contains(_cave[idx][i]))
                 .ToList();
 
-            Console.WriteLine($"MATCH ROCK at {idx}: ");
-            match.ForEach(x => Console.Write(x));
-            Console.WriteLine("DONE");
-            
             return match;
         }
 
@@ -102,11 +97,7 @@ public class Pyroclastic
             match = Enumerable.Range(0, _cave[idx].Count)
                 .Where(i => matches.Contains(_cave[idx][i]))
                 .ToList();
-            
-            Console.WriteLine("MATCH FLOOR: ");
-            match.ForEach(x => Console.Write(x));
-            Console.WriteLine("DONE");
-            
+
             break;
         }
 
@@ -126,6 +117,20 @@ public class Pyroclastic
 
         return lowestHeightRock;
     }
+    
+    private int FindHighestRockYPosition()
+    {
+        int highestHeightRock = 0;
+        for (var idx = _cave.Count() - 1; idx != 0; idx--)
+        {
+            if (!_cave[idx].Contains('@')) continue;
+            // First occurrence is lowest position of rock
+            highestHeightRock = idx;
+            break;
+        }
+
+        return highestHeightRock;
+    }
 
     private void ApplyJet()
     {
@@ -141,15 +146,10 @@ public class Pyroclastic
         var left = leftIndices.Min();
         var right = rightIndices.Max();
         
-        Console.WriteLine($"Move = {_jetPattern[_currentIndex]} at {_currentIndex}, {left}, {right}");
-        
         if (_jetPattern[_currentIndex] == '<' && left != 1)
         {
-            bool applyMove = true;
-            for (var idy = 0; idy != _cave.Count(); idy++)
-            {
-                applyMove = _cave[idy].IndexOf('@') - 1 != '#';
-            }
+            var lowestYRock = FindLowestRockYPosition();
+            bool applyMove = _cave[lowestYRock][_cave[lowestYRock].IndexOf('@') - 1] != '#';
 
             if (applyMove)
             {
@@ -176,52 +176,53 @@ public class Pyroclastic
 
     private bool RockFalling()
     {
-        Console.WriteLine("FALLDOWN");
         int lowestHeightRock = FindLowestRockYPosition();
         if (lowestHeightRock > FindBottomYPosition() + 1)
         {
-            Console.WriteLine($"Bla {lowestHeightRock} and {FindBottomYPosition()}");
             _cave.RemoveAt(lowestHeightRock - 1);
             return true;
         }
-        
-        if (!FindLowestXPositionsRock().Intersect(FindXPositionsFloor()).Any())
+
+        if (FindLowestXPositionsRock().Any(x => _cave[FindLowestRockYPosition() - 1][x] == '#' || _cave[FindLowestRockYPosition() - 1][x] == '-'))
         {
-            // Fall down once more, but now more complex since it falls on floor
-            Console.WriteLine("SPECIAL: CASE");
-            var lowestRock = _cave[FindLowestRockYPosition()];
-            var newBottom = new List<char>();
-            for (var idx = 0; idx != _cave[FindBottomYPosition()].Count(); idx++)
+            // In case it is not falling anymore; convert to non-falling rock
+            ConvertToNotFallingRock();
+            return false;
+        }
+        else 
+        {
+            // Fall down once more, but now more complex since we cannot remove entry above to fall down
+            var highestRock = FindHighestRockYPosition();
+            var lowestRock = FindLowestRockYPosition();
+
+            var newEntries = new List<List<char>>();
+            for (var height = lowestRock - 1; height < highestRock; height++)
             {
-                newBottom.Add(lowestRock[idx] == '@' ? '@' : _cave[FindBottomYPosition()][idx]);
+                var newEntry = new List<char>();
+                for (var idx = 0; idx != _cave[0].Count(); idx++)
+                {
+                    newEntry.Add(_cave[height][idx] == '#' ? '#' : _cave[height + 1][idx]);
+                }
+                newEntries.Add(newEntry);
             }
             
-            Console.WriteLine($"{FindBottomYPosition()} and {FindLowestRockYPosition()}");
-            for (var idx = 0; idx != _cave.Count(); idx++)
+            foreach (var chars in _cave)
             {
-                _cave[idx].ForEach(x => Console.Write(x));
-                Console.WriteLine("");
+                chars.ForEach(x => Console.Write(x));
+                Console.WriteLine();
             }
             
-            _cave.RemoveAt(FindLowestRockYPosition());
-            for (var idx = 0; idx != _cave.Count(); idx++)
-            {
-                _cave[idx].ForEach(x => Console.Write(x));
-                Console.WriteLine("");
-            }
+            _cave.RemoveRange(lowestRock - 1, 2 + highestRock - lowestRock);
+            _cave.AddRange(newEntries);
             
-            _cave[FindBottomYPosition()] = newBottom;
-            for (var idx = 0; idx != _cave.Count(); idx++)
+            Console.WriteLine("And now");
+            foreach (var chars in _cave)
             {
-                _cave[idx].ForEach(x => Console.Write(x));
-                Console.WriteLine("");
+                chars.ForEach(x => Console.Write(x));
+                Console.WriteLine();
             }
-            
             return true;
         }
-
-        ConvertToNotFallingRock();
-        return false;
     }
 
     private void PlaceRock(List<char> rock)
@@ -238,7 +239,6 @@ public class Pyroclastic
             var amountOfNewEntries = highestHeightInCave - _cave.Count();
             foreach (var repeats in Enumerable.Range(0, amountOfNewEntries))
             {
-                Console.WriteLine($"Adding entry {repeats} and {highestHeightInCave}");
                 List<char> newEntries = new()
                 {
                     '|', '.', '.', '.', '.', '.', '.', '.', '|'
@@ -247,13 +247,12 @@ public class Pyroclastic
             }
         }
 
-        for (var rockPart = 0; rockPart <= heightRock - 1; rockPart++)
+        for (var rockPart = heightRock - 1; rockPart >= 0; rockPart--)
         {
-            Console.WriteLine($"Adding rock with {heightRock}, {bottom}, {rockPart}, {_cave.Count()}");
             List<char> newEntry = new() { '|', '.', '.' };
             newEntry.AddRange(rock.GetRange(rockPart * 4, 4));
             newEntry.AddRange(new List<char>() { '.', '|' });
-            _cave[bottom + 4 + rockPart] = newEntry;
+            _cave[bottom + 3 + heightRock - rockPart] = newEntry;
         }
     }
 
@@ -286,7 +285,7 @@ public class Pyroclastic
         _jetPattern = File.ReadAllText(file).ToList();
         
         var newRockEntry = new List<char>();
-        var input = File.ReadLines("simpleinput.txt");
+        var input = File.ReadLines("input.txt");
 
         for (var idx = 0; idx != input.Count(); idx++)
         {
@@ -328,7 +327,7 @@ public class Pyroclastic
         static void Main(string[] args)
         {
             var pyro = new Pyroclastic();
-            pyro.SolveProblem1("dummydata.txt", 10).Should().Be(26);
+            pyro.SolveProblem1("dummydata.txt", 10).Should().Be(3068);
             // beacon.SolveProblem2("dummydata.txt", 20).Should().Be(56000011);
             // var answer1 = beacon.SolveProblem1("data.txt", 2000000);
             // var answer2 = beacon.SolveProblem2("data.txt", 4000000);
