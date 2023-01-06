@@ -40,36 +40,35 @@ public class Grove
     {
         for (var originalIndex = 0; originalIndex != _positions.Count; originalIndex++)
         {
-            var moves = _numbers[originalIndex];
-            var position = _positions[originalIndex];
+            var amountOfSteps = _numbers[originalIndex];
+            var currentPos = _positions[originalIndex];
 
-            switch (moves)
+            switch (amountOfSteps)
             {
-                case > 0 when position + moves < _positions.Count - 1:
+                case > 0 when currentPos + amountOfSteps < _positions.Count - 1:
                 {
-                    // "moves" amount of steps moves left at right of original position
-                    foreach (var pos in Enumerable.Range(position + 1, moves))
+                    for (var moveleftIndex = currentPos + 1; moveleftIndex <= currentPos + amountOfSteps; moveleftIndex++)
                     {
-                        _positions[_positions.IndexOf(pos)] -= 1;
+                        _positions[_positions.IndexOf(moveleftIndex)] -= 1;
                     }
                     
-                    _positions[originalIndex] = position + moves;
+                    _positions[originalIndex] = currentPos + amountOfSteps;
                     break;
                 }
                 case > 0:
                 {
                     // Modulo Length - 1 because one extra step is done at right side.
-                    var endPosition = mod(position + moves, _positions.Count - 1);
-                    if (endPosition < position)
+                    var endPosition = mod(currentPos + amountOfSteps, _positions.Count - 1);
+                    if (endPosition < currentPos)
                     {
-                        for (var moveRightIndex = position - 1; moveRightIndex >=  endPosition; moveRightIndex--)
+                        for (var moveRightIndex = currentPos - 1; moveRightIndex >= endPosition; moveRightIndex--)
                         {
                             _positions[_positions.IndexOf(moveRightIndex)] += 1;
                         }
                     }
-                    else if (endPosition > position)
+                    else if (endPosition > currentPos)
                     {
-                        for (var moveRightIndex = position + 1; moveRightIndex <= endPosition; moveRightIndex++)
+                        for (var moveRightIndex = currentPos + 1; moveRightIndex <= endPosition; moveRightIndex++)
                         {
                             _positions[_positions.IndexOf(moveRightIndex)] -= 1;
                         }
@@ -78,32 +77,32 @@ public class Grove
                     _positions[originalIndex] = endPosition;
                     break;
                 }
-                case < 0 when position + moves > 0:
+                case < 0 when currentPos + amountOfSteps > 0:
                 {
-                    foreach (var pos in Enumerable.Range(position + moves, Math.Abs(moves)))
+                    // Note that amountOfSteps is a negative number here! 
+                    for (var moveRightIndex = currentPos - 1; moveRightIndex >= currentPos + amountOfSteps; moveRightIndex--)
                     {
-                        _positions[_positions.IndexOf(pos)] += 1;
+                        _positions[_positions.IndexOf(moveRightIndex)] += 1;
                     }
 
-                    _positions[originalIndex] = position + moves;
+                    _positions[originalIndex] = currentPos + amountOfSteps;
                     break;
                 }
                 case < 0:
                 {
-                    var endPosition = position + moves == 0 ? 
-                        _positions.Count - 1 : 
-                        mod(position + moves, _positions.Count - 1);
+                    var endPosition = currentPos + amountOfSteps == 0 ? 
+                        _positions.Count - 1 : mod(currentPos + amountOfSteps, _positions.Count - 1);
 
-                    if (endPosition > position)
+                    if (endPosition > currentPos)
                     {
-                        for (var moveLeftIndex = position + 1; moveLeftIndex <= endPosition; moveLeftIndex++)
+                        for (var moveLeftIndex = currentPos + 1; moveLeftIndex <= endPosition; moveLeftIndex++)
                         {
                             _positions[_positions.IndexOf(moveLeftIndex)] -= 1;
                         }
                     }
-                    else if (endPosition < position)
+                    else if (endPosition < currentPos)
                     {
-                        for (var newRightIndex = position - 1; newRightIndex >=  endPosition; newRightIndex--)
+                        for (var newRightIndex = currentPos - 1; newRightIndex >= endPosition; newRightIndex--)
                         {
                             _positions[_positions.IndexOf(newRightIndex)] += 1;
                         }
