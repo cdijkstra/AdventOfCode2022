@@ -22,7 +22,8 @@ public class Grove
         MovePositions();
         
         var posZero = _positions[_numbers.IndexOf(0)];
-
+        _positions.ForEach(x => Console.Write(x));
+        
         Console.WriteLine($"Found {_numbers[_positions.IndexOf(mod(posZero + 1000, _positions.Count))]}");
         Console.WriteLine($"Found {_numbers[_positions.IndexOf(mod(posZero + 2000, _positions.Count))]}");
         Console.WriteLine($"Found {_numbers[_positions.IndexOf(mod(posZero + 3000, _positions.Count))]}");
@@ -138,7 +139,8 @@ internal static class Program
         var grove = new Grove();
 
         grove.SolveProblem1("dummydata.txt", 1).Should().Be(3);
-        var answer = grove.SolveProblem1("data.txt", 1);
-        Console.WriteLine($"Answer = {answer}");
+        grove.SolveProblem1("dummydata2.txt", 1).Should().Be(3);
+        // var answer = grove.SolveProblem1("data.txt", 1);
+        // Console.WriteLine($"Answer = {answer}");
     }
 }
