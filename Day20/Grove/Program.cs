@@ -36,78 +36,99 @@ public class Grove
                 {
                     case > 0 when currentPos + amountOfSteps < _positions.Count - 1:
                     {
-                        for (var moveleftIndex = currentPos + 1;
-                             moveleftIndex <= currentPos + amountOfSteps;
-                             moveleftIndex++)
-                        {
-                            _positions[_positions.IndexOf(moveleftIndex)] -= 1;
-                        }
-
-                        _positions[originalIndex] = currentPos + amountOfSteps;
+                        MoveRight(currentPos, amountOfSteps, originalIndex);
                         break;
                     }
                     case > 0:
                     {
-                        // Modulo Length - 1 because one extra step is done at right side.
-                        var endPosition = mod(currentPos + amountOfSteps, _positions.Count - 1);
-                        if (endPosition < currentPos)
-                        {
-                            for (var moveRightIndex = currentPos - 1; moveRightIndex >= endPosition; moveRightIndex--)
-                            {
-                                _positions[_positions.IndexOf(moveRightIndex)] += 1;
-                            }
-                        }
-                        else if (endPosition > currentPos)
-                        {
-                            for (var moveRightIndex = currentPos + 1; moveRightIndex <= endPosition; moveRightIndex++)
-                            {
-                                _positions[_positions.IndexOf(moveRightIndex)] -= 1;
-                            }
-                        }
-
-                        _positions[originalIndex] = endPosition;
+                        MoveRightWithModulo(currentPos, amountOfSteps, originalIndex);
                         break;
                     }
                     case < 0 when currentPos + amountOfSteps > 0:
                     {
-                        // Note that amountOfSteps is a negative number here! 
-                        for (var moveRightIndex = currentPos - 1;
-                             moveRightIndex >= currentPos + amountOfSteps;
-                             moveRightIndex--)
-                        {
-                            _positions[_positions.IndexOf(moveRightIndex)] += 1;
-                        }
-
-                        _positions[originalIndex] = currentPos + amountOfSteps;
+                        MoveLeft(currentPos, amountOfSteps, originalIndex);
                         break;
                     }
                     case < 0:
                     {
-                        var endPosition = currentPos + amountOfSteps == 0
-                            ? _positions.Count - 1
-                            : mod(currentPos + amountOfSteps, _positions.Count - 1);
-
-                        if (endPosition > currentPos)
-                        {
-                            for (var moveLeftIndex = currentPos + 1; moveLeftIndex <= endPosition; moveLeftIndex++)
-                            {
-                                _positions[_positions.IndexOf(moveLeftIndex)] -= 1;
-                            }
-                        }
-                        else if (endPosition < currentPos)
-                        {
-                            for (var newRightIndex = currentPos - 1; newRightIndex >= endPosition; newRightIndex--)
-                            {
-                                _positions[_positions.IndexOf(newRightIndex)] += 1;
-                            }
-                        }
-
-                        _positions[originalIndex] = endPosition;
+                        MoveLeftWithModulo(currentPos, amountOfSteps, originalIndex);
                         break;
                     }
                 }
             }
         }
+    }
+
+    private void MoveLeftWithModulo(long currentPos, long amountOfSteps, int originalIndex)
+    {
+        var endPosition = currentPos + amountOfSteps == 0
+            ? _positions.Count - 1
+            : mod(currentPos + amountOfSteps, _positions.Count - 1);
+
+        if (endPosition > currentPos)
+        {
+            for (var moveLeftIndex = currentPos + 1; moveLeftIndex <= endPosition; moveLeftIndex++)
+            {
+                _positions[_positions.IndexOf(moveLeftIndex)] -= 1;
+            }
+        }
+        else if (endPosition < currentPos)
+        {
+            for (var newRightIndex = currentPos - 1; newRightIndex >= endPosition; newRightIndex--)
+            {
+                _positions[_positions.IndexOf(newRightIndex)] += 1;
+            }
+        }
+
+        _positions[originalIndex] = endPosition;
+    }
+
+    private void MoveLeft(long currentPos, long amountOfSteps, int originalIndex)
+    {
+        // Note that amountOfSteps is a negative number here! 
+        for (var moveRightIndex = currentPos - 1;
+             moveRightIndex >= currentPos + amountOfSteps;
+             moveRightIndex--)
+        {
+            _positions[_positions.IndexOf(moveRightIndex)] += 1;
+        }
+
+        _positions[originalIndex] = currentPos + amountOfSteps;
+    }
+
+    private void MoveRightWithModulo(long currentPos, long amountOfSteps, int originalIndex)
+    {
+        // Modulo Length - 1 because one extra step is done at right side.
+        var endPosition = mod(currentPos + amountOfSteps, _positions.Count - 1);
+        if (endPosition < currentPos)
+        {
+            for (var moveRightIndex = currentPos - 1; moveRightIndex >= endPosition; moveRightIndex--)
+            {
+                _positions[_positions.IndexOf(moveRightIndex)] += 1;
+            }
+        }
+        else if (endPosition > currentPos)
+        {
+            for (var moveRightIndex = currentPos + 1; moveRightIndex <= endPosition; moveRightIndex++)
+            {
+                _positions[_positions.IndexOf(moveRightIndex)] -= 1;
+            }
+        }
+
+        _positions[originalIndex] = endPosition;
+    }
+
+    private void MoveRight(long currentPos, long amountOfSteps, int originalIndex)
+    {
+        for (var moveleftIndex = currentPos + 1;
+             moveleftIndex <= currentPos + amountOfSteps;
+             moveleftIndex++)
+        {
+            _positions[_positions.IndexOf(moveleftIndex)] -= 1;
+        }
+
+        _positions[originalIndex] = currentPos + amountOfSteps;
+        return;
     }
 
     private void Initialize(string file, bool secondExercise)
