@@ -22,12 +22,11 @@ public class Grove
         MovePositions();
         
         var posZero = _positions[_numbers.IndexOf(0)];
-        _positions.ForEach(x => Console.Write(x));
-        
         Console.WriteLine($"Found {_numbers[_positions.IndexOf(mod(posZero + 1000, _positions.Count))]}");
         Console.WriteLine($"Found {_numbers[_positions.IndexOf(mod(posZero + 2000, _positions.Count))]}");
         Console.WriteLine($"Found {_numbers[_positions.IndexOf(mod(posZero + 3000, _positions.Count))]}");
 
+        
         return _numbers[_positions.IndexOf(mod(posZero + 1000, _positions.Count))] +
                _numbers[_positions.IndexOf(mod(posZero + 2000, _positions.Count))] +
                _numbers[_positions.IndexOf(mod(posZero + 3000, _positions.Count))];
@@ -43,7 +42,6 @@ public class Grove
         {
             var moves = _numbers[originalIndex];
             var position = _positions[originalIndex];
-            Console.WriteLine($"Taking steps {moves} from {position} at index {originalIndex}");
 
             switch (moves)
             {
@@ -64,7 +62,7 @@ public class Grove
                     var endPosition = mod(position + moves, _positions.Count - 1);
                     if (endPosition < position)
                     {
-                        for (var moveRightIndex = endPosition; moveRightIndex < position; moveRightIndex++)
+                        for (var moveRightIndex = position - 1; moveRightIndex >=  endPosition; moveRightIndex--)
                         {
                             _positions[_positions.IndexOf(moveRightIndex)] += 1;
                         }
@@ -105,7 +103,7 @@ public class Grove
                     }
                     else if (endPosition < position)
                     {
-                        for (var newRightIndex = endPosition; newRightIndex < position; newRightIndex++)
+                        for (var newRightIndex = position - 1; newRightIndex >=  endPosition; newRightIndex--)
                         {
                             _positions[_positions.IndexOf(newRightIndex)] += 1;
                         }
@@ -138,9 +136,9 @@ internal static class Program
     {
         var grove = new Grove();
 
-        grove.SolveProblem1("dummydata.txt", 1).Should().Be(3);
-        grove.SolveProblem1("dummydata2.txt", 1).Should().Be(3);
-        // var answer = grove.SolveProblem1("data.txt", 1);
-        // Console.WriteLine($"Answer = {answer}");
+        // grove.SolveProblem1("dummydata.txt", 1).Should().Be(3);
+        // grove.SolveProblem1("dummydata2.txt", 1).Should().Be(3);
+        var answer = grove.SolveProblem1("data.txt", 1);
+        Console.WriteLine($"Answer = {answer}");
     }
 }
