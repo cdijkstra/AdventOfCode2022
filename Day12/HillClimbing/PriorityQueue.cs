@@ -52,5 +52,5 @@ class PriorityQueue<T> where T : IComparable<T> {
         return frontItem;
     }
     
-    public int Count { get { return data.Count; } }
+    public int Count => data.Count;
 }
