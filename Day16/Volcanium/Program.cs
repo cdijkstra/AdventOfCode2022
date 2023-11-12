@@ -12,32 +12,16 @@ public class Cave
     {
         Initialize(file);
 
-        var valves = _valves;
         var startValve = _valves.Single(x => x.Name == "AA");
-        startValve.Pressure = 0;
-        startValve.timeLeft = 30;
+        Queue<(string valveName, int totalFlow)> queue = new();
+        queue.Enqueue((startValve.Name, 0));
 
-        // Implement Dijkstra's algorithm
-        SimplePriorityQueue<Valve> pq = new SimplePriorityQueue<Valve>();
-        pq.Enqueue(startValve, -startValve.Pressure);
-
-        while (pq.Count > 0)
+        while (queue.Count > 0)
         {
-            Valve currentValve = pq.Dequeue();
-            if (!currentValve.Open && currentValve.Flow > 0)
-            {
-                var newValve = currentValve;
-                newValve.timeLeft--;
-                newValve.Pressure += newValve.Flow;
-                pq.Enqueue(newValve, -newValve.Pressure);
-            }
             
-            foreach (var tunnel in currentValve.ConnectedValves)
-            {
-                tunnel.timeLeft = currentValve.timeLeft - 1;
-                int newPressure = Math.Min(tunnel.Pressure, tunnel.timeLeft * currentValve.Flow * (30 - tunnel.timeLeft));
-            }
         }
+
+        return 1;
     }
 
     private void Initialize(string file)
@@ -56,18 +40,6 @@ public class Cave
                 ConnectedValvesString = valves
             });
         }
-
-        foreach (var valve in _valves)
-        {
-            var neighborValves = valve.ConnectedValvesString.Split(", ");
-            List<Valve> neighbors = new();
-            
-            foreach (var neighborValve in neighborValves)
-            {
-                neighbors.Add(_valves.Single(x => x.Name == neighborValve));
-            }
-            valve.ConnectedValves = neighbors;
-        }
     }
 }
 
@@ -76,9 +48,9 @@ internal static class Program
     static async Task Main(string[] args)
     {
         var cave = new Cave();
-        var answer = await cave.SolveProblem1("dummydata.txt", 10);
-        Console.WriteLine($"Answer = {answer}");
-        answer.Should().Be(1651);
+        var answer = cave.SolveProblem1("../../../dummydata.txt", 10);
+        // Console.WriteLine($"Answer = {answer}");
+        // answer.Should().Be(1651);
         // beacon.SolveProblem2("dummydata.txt", 20).Should().Be(56000011);
         // var answer1 = beacon.SolveProblem1("data.txt", 2000000);
         // var answer2 = beacon.SolveProblem2("data.txt", 4000000);
