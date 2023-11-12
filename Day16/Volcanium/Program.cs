@@ -1,5 +1,5 @@
 ﻿using System.Text.RegularExpressions;
-using FluentAssertions;
+using Priority_Queue;
 
 namespace Valve;
 
@@ -7,38 +7,37 @@ public class Cave
 {
     private List<Valve> _valves = new();
     private List<int> _pressureReleases = new();
-    
-    public async Task<int> SolveProblem1(string file, int row)
+
+    public int SolveProblem1(string file, int row)
     {
         Initialize(file);
 
         var valves = _valves;
-        await Traverse("AA", 30, 0, 0, valves);
-        Console.WriteLine($"Found {_pressureReleases.Max()}");
-        return _pressureReleases.Max();
-    }
+        var startValve = _valves.Single(x => x.Name == "AA");
+        startValve.Pressure = 0;
+        startValve.timeLeft = 30;
 
-    private async Task Traverse(string name, int minutes, int pressureReleased, int flow, List<Valve> valves, string path = "")
-    {
-        if (minutes > 0)
+        // Implement Dijkstra's algorithm
+        SimplePriorityQueue<Valve> pq = new SimplePriorityQueue<Valve>();
+        pq.Enqueue(startValve, -startValve.Pressure);
+
+        while (pq.Count > 0)
         {
-            Console.WriteLine($"{path} and {pressureReleased}");
-
-            var valve = valves.Single(valve => valve.Name == name);
-            foreach (var valveConnectedValve in valve.ConnectedValves)
+            Valve currentValve = pq.Dequeue();
+            if (!currentValve.Open && currentValve.Flow > 0)
             {
-                await Traverse(valveConnectedValve.Name, --minutes, pressureReleased + flow, flow, valves, path += name);
-                if (!valve.Open && valve.Flow > 0)
-                {
-                    Console.WriteLine("Opening");
-                    valve.Open = true;
-                    flow += valve.Flow;
-                    await Traverse(name, --minutes, pressureReleased + flow, flow, valves);
-                }
+                var newValve = currentValve;
+                newValve.timeLeft--;
+                newValve.Pressure += newValve.Flow;
+                pq.Enqueue(newValve, -newValve.Pressure);
+            }
+            
+            foreach (var tunnel in currentValve.ConnectedValves)
+            {
+                tunnel.timeLeft = currentValve.timeLeft - 1;
+                int newPressure = Math.Min(tunnel.Pressure, tunnel.timeLeft * currentValve.Flow * (30 - tunnel.timeLeft));
             }
         }
-        
-        _pressureReleases.Add(pressureReleased);
     }
 
     private void Initialize(string file)

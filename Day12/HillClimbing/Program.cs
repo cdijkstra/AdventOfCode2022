@@ -7,28 +7,21 @@ public class Hill
     char[,] _heightmap;
     private readonly char _startChar = 'S';
     private readonly char _endChar = 'E';
-    private Node _startNode = null;
-    private Node _endNode = null;
-    private int _nrows = 0;
-    private int _ncols = 0;
 
-    private Dictionary<Node, Dictionary<Node, int>> _graph = new();
-
+    private int _nrows;
+    private int _ncols;
+    
     public int SolveProblem1(string file)
     {
         Initialize(file);
-        return DijkstaAlgorithm();
+        var answer = BFS();
+        Console.Write(answer);
+        return answer;
     }
 
     private void Initialize(string file)
     {
-        _startNode = null;
-        _endNode = null;
-        _nrows = 0;
-        _ncols = 0;
-        _graph = new Dictionary<Node, Dictionary<Node, int>>();
-        
-        string[] lines = File.ReadAllLines(file);
+        string[] lines = File.ReadAllLines($"../../../{file}");
 
         // Create multidimensional char array
         int maxCols = lines.Max(x => x.Length);
@@ -47,138 +40,85 @@ public class Hill
         _ncols = _heightmap.GetLength(1);
 
         Console.WriteLine($"Dimensions {_nrows} and {_ncols}");
-
-        CreateGraph();
     }
 
-    private void CreateGraph()
+    private int BFS()
     {
-        // Find the start and end nodes on the heightmap. Distance is how many steps we've traversed to get here
-        // This is set to int.MaxValue if it still has to be computed.
+        List<(int deltaX, int deltaY)>
+            directions = new() { (0, 1), (1, 0), (0, -1), (-1, 0) }; // Possible moves: right, down, left, up.
+        var start = FindPosition('S');
+        var destination = FindPosition('E');
+        _heightmap[start.x, start.y] = 'a';
+        _heightmap[destination.x, destination.y] = 'z'; // We know the coordinates, so now set them to a and z so normal rules of heigh difference apply
+        
+        // Implement BFS to find shortest path
+        Queue<(int x, int y, int steps)> queue = new Queue<(int x, int y, int steps)>();
+        bool[,] visited = new bool[_nrows, _ncols];
+
+        // Enqueue the starting position.
+        queue.Enqueue((start.x, start.y, 0));
+        visited[start.x, start.y] = true;
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (current.x == destination.x && current.y == destination.y)
+            {
+                return current.steps;
+            }
+
+            // go to neighbors if not already visited
+            foreach (var direction in directions)
+            {
+                var newX = current.x + direction.deltaX;
+                var newY = current.y + direction.deltaY;
+
+                if (!Enumerable.Range(0, _nrows).Contains(newX) ||
+                    !Enumerable.Range(0, _ncols).Contains(newY) ||
+                    visited[newX, newY]) continue;
+                
+                // Check if the elevation change is within limits (same or +1)
+                char currentElevation = _heightmap[current.x, current.y];
+                char newElevation = _heightmap[newX, newY];
+                int elevationDifference = newElevation - currentElevation;
+                if (elevationDifference > 1) continue;
+                
+                Console.WriteLine($"{newX} and {newY}");
+                
+                queue.Enqueue((newX, newY, current.steps + 1));
+                visited[newX, newY] = true;
+            }
+        }
+        
+        // If no path is found.
+        return -1;
+    }
+
+    private (int x, int y) FindPosition(char letter)
+    {
         for (int i = 0; i < _nrows; i++)
         {
             for (int j = 0; j < _ncols; j++)
             {
-                // Should we insert 'a' and 'z' instead of 'S' and 'E' here?
-                if (_heightmap[i, j] == _startChar)
+                if (_heightmap[i, j] == letter)
                 {
-                    _startNode = new Node(i, j, 'a');
-                    Console.WriteLine("Found start");
-                }
-                else if (_heightmap[i, j] == _endChar)
-                {
-                    _endNode = new Node(i, j, 'z');
-                    Console.WriteLine("Found end");
+                    return (i, j);
                 }
             }
         }
 
-        if (_startNode == null || _endNode == null)
-        {
-            throw new Exception("Start or end node not found");
-        }
-
-        // Replace S by a and E by z in the heightmap
-        for (int i = 0; i < _heightmap.GetLength(0); i++)
-        {
-            for (int j = 0; j < _heightmap.GetLength(1); j++)
-            {
-                if (_heightmap[i, j] == 'S')
-                {
-                    _heightmap[i, j] = 'a';
-                }
-
-                if (_heightmap[i, j] == 'E')
-                {
-                    _heightmap[i, j] = 'z';
-                }
-            }
-        }
-
-        // Create the graph as a dictionary of nodes and their neighbors
-        for (int i = 0; i < _nrows; i++)
-        {
-            for (int j = 0; j < _ncols; j++)
-            {
-                Node currentNode = new Node(i, j, _heightmap[i, j]);
-                _graph[currentNode] = new Dictionary<Node, int>();
-
-                if (i > 0 && Math.Abs(_heightmap[i, j] - _heightmap[i - 1, j]) <= 1)
-                {
-                    _graph[currentNode][new Node(i - 1, j, _heightmap[i - 1, j])] = 1;
-                }
-
-                if (j > 0 && Math.Abs(_heightmap[i, j] - _heightmap[i, j - 1]) <= 1)
-                {
-                    _graph[currentNode][new Node(i, j - 1, _heightmap[i, j - 1])] = 1;
-                }
-
-                if (i < _nrows - 1 && Math.Abs(_heightmap[i, j] - _heightmap[i + 1, j]) <= 1)
-                {
-                    _graph[currentNode][new Node(i + 1, j, _heightmap[i + 1, j])] = 1;
-                }
-
-                if (j < _ncols - 1 && Math.Abs(_heightmap[i, j] - _heightmap[i, j + 1]) <= 1)
-                {
-                    _graph[currentNode][new Node(i, j + 1, _heightmap[i, j + 1])] = 1;
-                }
-            }
-        }
+        throw new Exception("Not found");
     }
+}
 
-    private int DijkstaAlgorithm()
+internal static class Program
+{
+    static async Task Main(string[] args)
     {
-        // Perform Dijkstra's algorithm
-        HashSet<Node> visited = new HashSet<Node>();
-        PriorityQueue<Node> priorityQueue = new PriorityQueue<Node>((a, b) => a.Cost - b.Cost);
-        _startNode.Cost = 0;
-        priorityQueue.Enqueue(_startNode);
-
-        while (priorityQueue.Count > 0)
-        {
-            Node currentNode = priorityQueue.Dequeue();
-
-            Console.WriteLine(
-                $"Visiting {currentNode.Height} with Cost {currentNode.Cost} at {currentNode.Row},{currentNode.Col}");
-
-            if (currentNode.Equals(_endNode))
-            {
-                Console.WriteLine("Shortest distance from S to E: " + currentNode.Cost);
-                return currentNode.Cost;
-            }
-
-            if (visited.Contains(currentNode))
-            {
-                continue;
-            }
-
-            visited.Add(currentNode);
-
-            foreach (Node neighborNode in _graph[currentNode].Keys)
-            {
-                int cost = _graph[currentNode][neighborNode];
-
-                if (!visited.Contains(neighborNode) && currentNode.Cost + cost < neighborNode.Cost)
-                {
-                    neighborNode.Cost = currentNode.Cost + cost;
-                    priorityQueue.Enqueue(neighborNode);
-                }
-            }
-        }
-
-        Console.WriteLine("Could not solve...");
-        return 0;
-    }
-
-    internal static class Program
-    {
-        static async Task Main(string[] args)
-        {
-            var hill = new Hill();
-            hill.SolveProblem1("dummydata.txt").Should().Be(31);
-            hill.SolveProblem1("data.txt").Should().Be(31);
-            // var solution1 = hill.SolveProblem1("data.txt");
-            // solution1.Should().Be(12);
-        }
+        var hill = new Hill();
+        // hill.SolveProblem1("dummydata.txt").Should().Be(31);
+        hill.SolveProblem1("data.txt");
+        // var solution1 = hill.SolveProblem1("data.txt");
+        // solution1.Should().Be(12);
     }
 }
