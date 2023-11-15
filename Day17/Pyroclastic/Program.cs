@@ -4,275 +4,236 @@ namespace Space;
 
 public class Pyroclastic
 {
-    private readonly List<List<char>> _rocks = new();
+    private readonly List<List<char[]>> _rocks = new();
     private List<List<char>> _cave = new();
     private List<char> _jetPattern = new();
     private int _currentIndex = 0;
+    
+    private List<char> _bottom = new()
+    {
+        '+', '-', '-', '-', '-', '-', '-', '-', '+'
+    };
+    
+    private  List<char> _emptyEntry = new()
+    {
+        '|', '.', '.', '.', '.', '.', '.', '.', '|'
+    };
+
 
     public int SolveProblem1(string file, int row)
     {
         Initialize(file);
-
+        
         for (var repeats = 0; repeats != row; repeats++)
         {
-            PlaceRock(_rocks[repeats % _rocks.Count()]);
-            ApplyJetAndFall();
+            PlaceRock(_rocks[repeats % _rocks.Count]);
+            ApplyJetAndFallUntilFinished(_rocks[repeats % _rocks.Count]);
         }
 
-        foreach (var chars in _cave)
+        return _cave.Count;
+    }
+    
+    private int FindLevelHighestRock(bool moving)
+    {
+        int highestRow = 1;
+        var findChar = moving ? '@' : '#';
+        for (var idx = _cave.Count - 1; idx > 0; idx--)
         {
-            chars.ForEach(x => Console.Write(x));
-            Console.WriteLine();
+            if (!_cave[idx].Contains(findChar)) continue;
+            highestRow = idx;
+            break;  // No need to continue searching in this level once '#' is found
         }
         
-        return _cave.Count() - 1;
+        return highestRow;
     }
 
-    private void ApplyJetAndFall()
+    
+    private void PlaceRock(List<char[]> rock)
     {
-        // Fall down while possible
-        bool continueFalling = true;
-        while (continueFalling)
-        {
-            // Apply jet and fall
-            ApplyJet();
-            continueFalling = RockFalling();
-        }
-    }
-
-    private void ConvertToNotFallingRock()
-    {
-        for (var idx = 0; idx != _cave.Count(); idx++)
-        {
-            // Find first match
-            if (!_cave[idx].Contains('@')) continue;
-            List<char> newEntry = new();
-            foreach (var ch in _cave[idx])
-            {
-                newEntry.Add(ch == '@' ? '#' : ch);
-            }
-
-            var updatedEntry = newEntry;
-
-            _cave[idx] = updatedEntry;
-        }
-    }
-
-    private List<int> FindLowestXPositionsRock()
-    {
-        var matches = new List<char>()
-        {
-            '@'
-        };
+        var totalHeight = _cave.Count;
+        var highestRockLevel = FindLevelHighestRock(false);
+        Console.WriteLine($"{totalHeight} and {highestRockLevel}");
+        var requiredEmptyRows = 3;
         
-        List<int> match = new();
-        for (var idx = 0; idx != _cave.Count(); idx++)
+        _cave.AddRange(Enumerable.Repeat(_emptyEntry, requiredEmptyRows));
+
+        foreach (var rockPart in rock.Reverse<char[]>())
         {
-            if (!matches.Any(match => _cave[idx].Contains(match))) continue;
-            // First occurrence is lowest position of rock
+            int numberOfDotsAfterRock = 5 - rockPart.Length;
             
-            match = Enumerable.Range(0, _cave[idx].Count)
-                .Where(i => matches.Contains(_cave[idx][i]))
-                .ToList();
-
-            return match;
-        }
-
-        return match;
-    }
-    
-    private List<int> FindXPositionsFloor()
-    {
-        var matches = new List<char>()
-        {
-            '-', '#'
-        };
-
-        List<int> match = new();
-        for (var idx = _cave.Count() - 1; idx >= 0; idx--)
-        {
-            if (!matches.Any(match => _cave[idx].Contains(match) && !_cave[idx].Contains('@'))) continue;
-            // First occurrence is lowest position of rock
-            
-            match = Enumerable.Range(0, _cave[idx].Count)
-                .Where(i => matches.Contains(_cave[idx][i]))
-                .ToList();
-
-            break;
-        }
-
-        return match;
-    }
-    
-    private int FindLowestRockYPosition()
-    {
-        int lowestHeightRock = 0;
-        for (var idx = 0; idx != _cave.Count(); idx++)
-        {
-            if (!_cave[idx].Contains('@')) continue;
-            // First occurrence is lowest position of rock
-            lowestHeightRock = idx;
-            break;
-        }
-
-        return lowestHeightRock;
-    }
-    
-    private int FindHighestRockYPosition()
-    {
-        int highestHeightRock = 0;
-        for (var idx = _cave.Count() - 1; idx != 0; idx--)
-        {
-            if (!_cave[idx].Contains('@')) continue;
-            // First occurrence is lowest position of rock
-            highestHeightRock = idx;
-            break;
-        }
-
-        return highestHeightRock;
-    }
-
-    private void ApplyJet()
-    {
-        // Find most left and most right entry of '@'
-        List<int> leftIndices = new();
-        List<int> rightIndices = new();
-        foreach (var entry in _cave.Where(entry => entry.Contains('@')))
-        {
-            leftIndices.Add(entry.IndexOf('@'));
-            rightIndices.Add(entry.LastIndexOf('@'));
-        }
-
-        var left = leftIndices.Min();
-        var right = rightIndices.Max();
-
-        Console.WriteLine($"Moving in {_jetPattern[_currentIndex]}");
-        
-        if (_jetPattern[_currentIndex] == '<' && left != 1)
-        {
-            var lowestYRock = FindLowestRockYPosition();
-            bool applyMove = _cave[lowestYRock][_cave[lowestYRock].IndexOf('@') - 1] != '#';
-
-            if (applyMove)
-            {
-                foreach (var entry in _cave.Where(entry => entry.Contains('@')))
-                {
-                    if (entry.IndexOf('@') - 1 == '#') break;
-                    entry[entry.IndexOf('@') - 1] = '@';
-                    entry[entry.LastIndexOf('@')] = '.';
-                }
-            }
-        }
-        else if (_jetPattern[_currentIndex] == '>' && right != 7)
-        {
-            foreach (var entry in _cave.Where(entry => entry.Contains('@')))
-            {
-                if (entry[entry.LastIndexOf('@') + 1] == '#') break;
-                entry[entry.LastIndexOf('@') + 1] = '@';
-                entry[entry.IndexOf('@')] = '.';
-            }
-        }
-
-        Console.WriteLine($"Currentindex = {_currentIndex}");
-        _currentIndex = (_currentIndex + 1) % _jetPattern.Count();
-        
-        // foreach (var chars in _cave)
-        // {
-        //     chars.ForEach(x => Console.Write(x));
-        //     Console.WriteLine();
-        // }
-    }
-
-    private bool RockFalling()
-    {
-        if (FindLowestXPositionsRock().Any(x => _cave[FindLowestRockYPosition() - 1][x] == '#' || _cave[FindLowestRockYPosition() - 1][x] == '-'))
-        {
-            // In case it is not falling anymore; convert to non-falling rock
-            ConvertToNotFallingRock();
-
-            return false;
-        }
-        
-        // Fall down once more, but now more complex since we cannot remove entry above to fall down
-        var highestRock = FindHighestRockYPosition();
-        var lowestRock = FindLowestRockYPosition();
-        var floorY = FindBottomYPosition();
-
-        var newEntries = new List<List<char>>();
-        
-        for (var height = lowestRock - 1; height < highestRock; height++)
-        {
-            var newEntry = new List<char>();
-            for (var idx = 0; idx != _cave[0].Count(); idx++)
-            {
-                newEntry.Add(_cave[height][idx] == '#' ? '#' : _cave[height + 1][idx]);
-            }
-            newEntries.Add(newEntry);
-        }
-
-        var entriesToRemove = _cave.Count - lowestRock + 1;
-
-        Console.WriteLine($"FOund {highestRock} and {floorY}");
-        if (highestRock <= floorY)
-        {
-            for (var extraLoop = highestRock; extraLoop <= floorY; extraLoop++)
-            {
-                var newEntry = new List<char>();
-                for (var idx = 0; idx != _cave[0].Count(); idx++)
-                {
-                    newEntry.Add(_cave[extraLoop][idx] == '@' ? '.' : _cave[extraLoop][idx]);
-                }
-                newEntries.Add(newEntry);
-            }
-        }
-        
-        Console.WriteLine($"ENtries to remove {entriesToRemove}");
-
-        _cave.RemoveRange(lowestRock - 1, _cave.Count - lowestRock + 1);
-        _cave.AddRange(newEntries);
-
-        return true;
-    }
-
-    private void PlaceRock(List<char> rock)
-    {
-        // Find height rock
-        var heightRock = rock.Count() / 4;
-        
-        // Add three empty entries to cave
-        foreach (var repeats in Enumerable.Range(0, 3))
-        {
-            List<char> newEntries = new()
-            {
-                '|', '.', '.', '.', '.', '.', '.', '.', '|'
-            };
-            _cave.Add(newEntries);
-        }
-        Console.WriteLine($"Cave count = {_cave.Count}");
-        
-        // Add rock
-        for (var rockPart = heightRock - 1; rockPart >= 0; rockPart--)
-        {
-            List<char> newEntry = new() { '|', '.', '.' };
-            newEntry.AddRange(rock.GetRange(rockPart * 4, 4));
-            newEntry.AddRange(new List<char>() { '.', '|' });
+            var newEntry = new List<char> { '|', '.', '.' }
+                .Concat(rockPart)
+                .Concat(Enumerable.Repeat('.', numberOfDotsAfterRock))
+                .Concat(new List<char> { '|' })
+                .ToList();     
             _cave.Add(newEntry);
         }
+
+        foreach (var caveEntry in _cave)
+        {
+            caveEntry.ForEach(x => Console.Write(x));
+            Console.WriteLine();
+        }
+        Console.WriteLine("Rock placed");
     }
 
-    private int FindBottomYPosition()
+    private void ApplyJetAndFallUntilFinished(List<char[]> rock)
     {
-        for (var idx = _cave.Count() - 1; idx >= 0; idx--)
+        var verticalRockEntries = rock.Count;
+
+        while (Enumerable.Range(0, verticalRockEntries)
+               .All(verticalEntry => CanMoveDown(FindLevelHighestRock(true) - verticalRockEntries + 1, verticalEntry)))
         {
-            List<char> rocks = new List<char>() { '#', '-' };
-            if (_cave[idx].GetRange(1, 5).Any(rock => rocks.Contains(rock)))
+            var movementDirection = _jetPattern[_currentIndex++];
+
+            var highestEntry = FindLevelHighestRock(true);
+            var lowestEntry = highestEntry - (verticalRockEntries - 1);
+            
+            // Applying JET
+            ApplyJet(movementDirection, verticalRockEntries, highestEntry);
+            foreach (var caveEntry in _cave)
             {
-                Console.WriteLine($"Found bottom at {idx}");
-                return idx;
+                caveEntry.ForEach(x => Console.Write(x));
+                Console.WriteLine();
+            }
+            Console.WriteLine("Jet applied");
+            
+            // Falling
+            MoveRockRowDown(lowestEntry, verticalRockEntries); 
+        }
+    }
+
+    private void ApplyJet(char movementDirection, int verticalRockEntries, int highestEntry)
+    {
+        if (movementDirection == '<')
+        {
+            if (Enumerable.Range(0, verticalRockEntries)
+                .All(row => CanMoveLeft(highestEntry - row)))
+            {
+                foreach (var idx in Enumerable.Range(0, verticalRockEntries))
+                {
+                    MoveRockRowLeft(highestEntry - idx);
+                }
             }
         }
+        else if (movementDirection == '>')
+        {
+            if (Enumerable.Range(0, verticalRockEntries)
+                .All(row => CanMoveRight(highestEntry - row)))
+            {
+                foreach (var idx in Enumerable.Range(0, verticalRockEntries))
+                {
+                    var row = highestEntry - idx;
+                    MoveRockRowRight(row);
+                }
+            }
+        }
+        else
+        {
+            throw new Exception("No idea what this operator is");
+        }
+    }
 
-        return 0;
+    private void MoveRockRowDown(int lowestEntry, int verticalEntries)
+    {
+        foreach (var extraHeight in Enumerable.Range(0, verticalEntries))
+        {
+            var heightEntry = lowestEntry + extraHeight;
+            
+            List<int> indexes = Enumerable.Range(0, 8)
+                .Where(i => _cave[heightEntry][i] == '@')
+                .ToList();
+    
+            List<char> newRow = new List<char>(_cave[heightEntry - 1]);
+            indexes.ForEach(idx => newRow[idx] = '@');
+            _cave[heightEntry - 1] = newRow;
+
+            indexes.ForEach(idx => _cave[lowestEntry][idx] = '.');
+        }
+        
+        foreach (var caveEntry in _cave)
+        {   
+            caveEntry.ForEach(x => Console.Write(x));
+            Console.WriteLine();
+        }
+        Console.WriteLine("Rock moved down");
+        
+        _cave.RemoveAt(lowestEntry);
+    }
+
+    private bool CanMoveDown(int lowestEntry, int verticalEntry)
+    {
+        if (lowestEntry == 1)
+        {
+            return false; // Bottom
+        }
+
+        var heightEntry = lowestEntry + verticalEntry;
+        
+        List<int> blocksAtLowestHeight = Enumerable.Range(0, 8)
+            .Where(i => _cave[heightEntry][i] == '@')
+            .ToList();
+
+        return blocksAtLowestHeight.All(entry => _cave[heightEntry - 1][entry] != '#');
+    }
+
+    private void MoveRockRowRight(int highestEntry)
+    {
+        List<char> row = _cave[highestEntry];
+        // Find indices of '@' in the row
+        List<int> atIndexList = Enumerable.Range(0, row.Count)
+            .Where(i => row[i] == '@')
+            .OrderByDescending(i => i)
+            .ToList();
+
+        // Move each '@' one entry to the left
+        foreach (int atIndex in atIndexList)
+        {
+            (row[atIndex], row[atIndex + 1]) = (row[atIndex + 1], row[atIndex]);
+        }
+    }
+
+    private void MoveRockRowLeft(int highestEntry)
+    {
+        List<char> row = _cave[highestEntry];
+        // Find indices of '@' in the row
+        List<int> atIndexList = Enumerable.Range(0, row.Count)
+            .Where(i => row[i] == '@')
+            .ToList();
+
+        // Move each '@' one entry to the left
+        foreach (int atIndex in atIndexList)
+        {
+            if (atIndex > 0)
+            {
+                // Swap the positions of '@' and the character to its left
+                (row[atIndex], row[atIndex - 1]) = (row[atIndex - 1], row[atIndex]);
+            }
+        }
+    }
+
+    private bool CanMoveRight(int rowIndex)
+    {
+        if (rowIndex >= 0 && rowIndex < _cave.Count)
+        {
+            int index = _cave[rowIndex].LastIndexOf('@');
+            return index < 7;
+        }
+
+        // Handle the case where the row index is out of bounds
+        return false;
+    }
+
+    private bool CanMoveLeft(int rowIndex)
+    {
+        if (rowIndex >= 0 && rowIndex < _cave.Count)
+        {
+            int index = _cave[rowIndex].IndexOf('@');
+            return index > 1;
+        }
+
+        // Handle the case where the row index is out of bounds
+        return false;
     }
 
     private long Solvepuzzle2(int upperLimit)
@@ -290,44 +251,34 @@ public class Pyroclastic
         _jetPattern = File.ReadAllText(file).ToList();
         
         var newRockEntry = new List<char>();
-        var input = File.ReadLines("input.txt");
-
-        for (var idx = 0; idx != input.Count(); idx++)
+        var input = File.ReadLines("../../../input.txt");
+        
+        List<char[]> currentRock = new();
+        foreach (var line in input)
         {
-            if (idx == input.Count() - 1)
+            // Check if the line is empty, indicating the end of the current rock
+            if (string.IsNullOrWhiteSpace(line))
             {
-                var entry = input.ElementAt(idx).ToCharArray().ToList();
-                if (entry.Count() < 4)
+                if (currentRock.Count > 0)
                 {
-                    entry.AddRange(Enumerable.Repeat('.', 4 - entry.Count()).ToList());
+                    _rocks.Add(new List<char[]>(currentRock));
+                    currentRock.Clear();
                 }
-                newRockEntry.AddRange(entry);
-                _rocks.Add(newRockEntry);
-            }
-            else if (!string.IsNullOrEmpty(input.ElementAt(idx)))
-            {
-                var entry = input.ElementAt(idx).ToCharArray().ToList();
-                if (entry.Count() < 4)
-                {
-                    entry.AddRange(Enumerable.Repeat('.', 4 - entry.Count()).ToList());
-                }
-                newRockEntry.AddRange(entry);
             }
             else
             {
-                _rocks.Add(newRockEntry);
-                newRockEntry = new();
+                // Add the line to the current rock
+                currentRock.Add(line.ToCharArray());
             }
         }
         
-        var bottom = new List<char>()
+        if (currentRock.Count > 0)
         {
-            '+', '-', '-', '-', '-', '-', '-', '-', '+'
-        };
-        _cave.Add(bottom);
+            _rocks.Add(new List<char[]>(currentRock));
+        }
+        
+        _cave.Add(_bottom);
     }
-
-
     
     
     internal static class Program
@@ -335,9 +286,10 @@ public class Pyroclastic
         static void Main(string[] args)
         {
             var pyro = new Pyroclastic();
-            pyro.SolveProblem1("dummydata.txt", 10).Should().Be(17);
-            // pyro.SolveProblem1("dummydata.txt", 2022).Should().Be(3068);
-            // pyro.SolveProblem2("dummydata.txt", 20).Should().Be(56000011);
+            pyro.SolveProblem1("../../../dummydata.txt", 2);
+                // .Should().Be(17);
+            // pyro.SolveProblem1(file, 2022).Should().Be(3068);
+            // pyro.SolveProblem2(file, 20).Should().Be(56000011);
             // var answer1 = pyro.SolveProblem1("data.txt", 2022);
             // Console.WriteLine(answer1);
             // var answer2 = beacon.SolveProblem2("data.txt", 4000000);
