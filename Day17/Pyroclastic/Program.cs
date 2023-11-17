@@ -30,7 +30,8 @@ public class Pyroclastic
             ApplyJetAndFallUntilFinished(_rocks[repeats % _rocks.Count]);
         }
 
-        return _cave.Count;
+        Console.WriteLine($"Answer is {_cave.Count - 1}");
+        return _cave.Count - 1;
     }
     
     private int FindLevelHighestRock(bool moving)
@@ -69,68 +70,106 @@ public class Pyroclastic
             _cave.Add(newEntry);
         }
 
-        foreach (var caveEntry in _cave)
-        {
-            caveEntry.ForEach(x => Console.Write(x));
-            Console.WriteLine();
-        }
-        Console.WriteLine("Rock placed");
+        // foreach (var caveEntry in _cave.Reverse<List<char>>())
+        // {
+        //     caveEntry.ForEach(x => Console.Write(x));
+        //     Console.WriteLine();
+        // }
+        // Console.WriteLine("Rock placed");
     }
 
     private void ApplyJetAndFallUntilFinished(List<char[]> rock)
     {
         var verticalRockEntries = rock.Count;
-
-        while (Enumerable.Range(0, verticalRockEntries)
-               .All(verticalEntry => CanMoveDown(FindLevelHighestRock(true) - verticalRockEntries + 1, verticalEntry)))
+        
+        bool continueFalling = true;
+        while (continueFalling == true)
         {
-            var movementDirection = _jetPattern[_currentIndex++];
+            var movementDirection = _jetPattern[_currentIndex++ % _jetPattern.Count];
 
             var highestEntry = FindLevelHighestRock(true);
             var lowestEntry = highestEntry - (verticalRockEntries - 1);
             
             // Applying JET
             ApplyJet(movementDirection, verticalRockEntries, highestEntry);
-            foreach (var caveEntry in _cave)
-            {
-                caveEntry.ForEach(x => Console.Write(x));
-                Console.WriteLine();
-            }
-            Console.WriteLine("Jet applied");
+            // Console.WriteLine($"Jet applied to {movementDirection}");
+            // foreach (var caveEntry in _cave.Reverse<List<char>>())
+            // {
+            //     caveEntry.ForEach(x => Console.Write(x));
+            //     Console.WriteLine();
+            // }
             
             // Falling
-            MoveRockRowDown(lowestEntry, verticalRockEntries); 
+            if (Enumerable.Range(0, verticalRockEntries)
+                .All(verticalEntry => CanMoveDown(FindLevelHighestRock(true) - verticalRockEntries + 1, verticalEntry)))
+            {
+                MoveRockRowDown(lowestEntry, verticalRockEntries);
+                
+                // Console.WriteLine("Rock moved down");
+                // foreach (var caveEntry in _cave.Reverse<List<char>>())
+                // {
+                //     caveEntry.ForEach(x => Console.Write(x));
+                //     Console.WriteLine();
+                // }
+            }
+            else
+            {
+                continueFalling = false;
+                foreach (var idx in Enumerable.Range(0, verticalRockEntries))
+                {
+                    List<char> row = _cave[highestEntry - idx];
+                    // Find indices of '@' in the row
+                    List<int> atIndexList = Enumerable.Range(0, row.Count)
+                        .Where(i => row[i] == '@')
+                        .ToList();
+                    
+                    atIndexList.ForEach(i => row[i] = '#');
+                }
+
+                // Console.WriteLine("Rock stopped falling");
+                // foreach (var caveEntry in _cave.Reverse<List<char>>())
+                // {
+                //     caveEntry.ForEach(x => Console.Write(x));
+                //     Console.WriteLine();
+                // }
+            }
         }
     }
 
     private void ApplyJet(char movementDirection, int verticalRockEntries, int highestEntry)
     {
-        if (movementDirection == '<')
+        switch (movementDirection)
         {
-            if (Enumerable.Range(0, verticalRockEntries)
-                .All(row => CanMoveLeft(highestEntry - row)))
+            case '<':
             {
-                foreach (var idx in Enumerable.Range(0, verticalRockEntries))
+                if (Enumerable.Range(0, verticalRockEntries)
+                    .All(row => CanMoveLeft(highestEntry - row)))
                 {
-                    MoveRockRowLeft(highestEntry - idx);
+                    MoveRockRowLeft(highestEntry, verticalRockEntries);
                 }
+                else
+                {
+                    Console.WriteLine("Could not move left");
+                }
+
+                break;
             }
-        }
-        else if (movementDirection == '>')
-        {
-            if (Enumerable.Range(0, verticalRockEntries)
-                .All(row => CanMoveRight(highestEntry - row)))
+            case '>':
             {
-                foreach (var idx in Enumerable.Range(0, verticalRockEntries))
+                if (Enumerable.Range(0, verticalRockEntries)
+                    .All(row => CanMoveRight(highestEntry - row)))
                 {
-                    var row = highestEntry - idx;
-                    MoveRockRowRight(row);
+                    MoveRockRowRight(highestEntry, verticalRockEntries);
                 }
+                else
+                {
+                    Console.WriteLine("Could not move right");
+                }
+
+                break;
             }
-        }
-        else
-        {
-            throw new Exception("No idea what this operator is");
+            default:
+                throw new Exception("No idea what this operator is");
         }
     }
 
@@ -148,17 +187,14 @@ public class Pyroclastic
             indexes.ForEach(idx => newRow[idx] = '@');
             _cave[heightEntry - 1] = newRow;
 
-            indexes.ForEach(idx => _cave[lowestEntry][idx] = '.');
+            indexes.ForEach(idx => _cave[heightEntry][idx] = '.');
         }
         
-        foreach (var caveEntry in _cave)
-        {   
-            caveEntry.ForEach(x => Console.Write(x));
-            Console.WriteLine();
+        var highestEntryMovingRock = lowestEntry + verticalEntries - 1;
+        if (FindLevelHighestRock(false) < highestEntryMovingRock)
+        {
+            _cave.RemoveAt(highestEntryMovingRock);
         }
-        Console.WriteLine("Rock moved down");
-        
-        _cave.RemoveAt(lowestEntry);
     }
 
     private bool CanMoveDown(int lowestEntry, int verticalEntry)
@@ -174,37 +210,21 @@ public class Pyroclastic
             .Where(i => _cave[heightEntry][i] == '@')
             .ToList();
 
-        return blocksAtLowestHeight.All(entry => _cave[heightEntry - 1][entry] != '#');
+        return blocksAtLowestHeight.All(entry => _cave[heightEntry - 1][entry] != '#' && _cave[heightEntry - 1][entry] != '-');
     }
-
-    private void MoveRockRowRight(int highestEntry)
+    
+    private void MoveRockRowLeft(int highestEntry, int verticalRowEntries)
     {
-        List<char> row = _cave[highestEntry];
-        // Find indices of '@' in the row
-        List<int> atIndexList = Enumerable.Range(0, row.Count)
-            .Where(i => row[i] == '@')
-            .OrderByDescending(i => i)
-            .ToList();
-
-        // Move each '@' one entry to the left
-        foreach (int atIndex in atIndexList)
+        foreach (var idx in Enumerable.Range(0, verticalRowEntries))
         {
-            (row[atIndex], row[atIndex + 1]) = (row[atIndex + 1], row[atIndex]);
-        }
-    }
+            List<char> row = _cave[highestEntry - idx];
+            // Find indices of '@' in the row
+            List<int> atIndexList = Enumerable.Range(0, row.Count)
+                .Where(i => row[i] == '@')
+                .ToList();
 
-    private void MoveRockRowLeft(int highestEntry)
-    {
-        List<char> row = _cave[highestEntry];
-        // Find indices of '@' in the row
-        List<int> atIndexList = Enumerable.Range(0, row.Count)
-            .Where(i => row[i] == '@')
-            .ToList();
-
-        // Move each '@' one entry to the left
-        foreach (int atIndex in atIndexList)
-        {
-            if (atIndex > 0)
+            // Move each '@' one entry to the left
+            foreach (int atIndex in atIndexList.Where(idx => idx > 0))
             {
                 // Swap the positions of '@' and the character to its left
                 (row[atIndex], row[atIndex - 1]) = (row[atIndex - 1], row[atIndex]);
@@ -212,24 +232,43 @@ public class Pyroclastic
         }
     }
 
-    private bool CanMoveRight(int rowIndex)
+    private void MoveRockRowRight(int highestEntry, int verticalRockEntries)
     {
-        if (rowIndex >= 0 && rowIndex < _cave.Count)
+        foreach (var idx in Enumerable.Range(0, verticalRockEntries))
         {
-            int index = _cave[rowIndex].LastIndexOf('@');
-            return index < 7;
-        }
+            List<char> row = _cave[highestEntry - idx];
+            // Find indices of '@' in the row
+            List<int> atIndexList = Enumerable.Range(0, row.Count)
+                .Where(i => row[i] == '@')
+                .OrderByDescending(i => i)
+                .ToList();
 
-        // Handle the case where the row index is out of bounds
-        return false;
+            // Move each '@' one entry to the left
+            foreach (int atIndex in atIndexList)
+            {
+                (row[atIndex], row[atIndex + 1]) = (row[atIndex + 1], row[atIndex]);
+            }
+        }
     }
 
     private bool CanMoveLeft(int rowIndex)
     {
         if (rowIndex >= 0 && rowIndex < _cave.Count)
         {
-            int index = _cave[rowIndex].IndexOf('@');
-            return index > 1;
+            var indexFirstRock = _cave[rowIndex].IndexOf('@');
+            return _cave[rowIndex][indexFirstRock - 1] != '|' && _cave[rowIndex][indexFirstRock - 1] != '#';
+        }
+
+        // Handle the case where the row index is out of bounds
+        return false;
+    }
+    
+    private bool CanMoveRight(int rowIndex)
+    {
+        if (rowIndex >= 0 && rowIndex < _cave.Count)
+        {
+            var indexLastRock = _cave[rowIndex].LastIndexOf('@');
+            return _cave[rowIndex][indexLastRock + 1] != '|' && _cave[rowIndex][indexLastRock + 1] != '#';
         }
 
         // Handle the case where the row index is out of bounds
@@ -257,13 +296,10 @@ public class Pyroclastic
         foreach (var line in input)
         {
             // Check if the line is empty, indicating the end of the current rock
-            if (string.IsNullOrWhiteSpace(line))
+            if (string.IsNullOrWhiteSpace(line) && currentRock.Count > 0)
             {
-                if (currentRock.Count > 0)
-                {
-                    _rocks.Add(new List<char[]>(currentRock));
-                    currentRock.Clear();
-                }
+                _rocks.Add(new List<char[]>(currentRock));
+                currentRock.Clear();
             }
             else
             {
@@ -286,14 +322,9 @@ public class Pyroclastic
         static void Main(string[] args)
         {
             var pyro = new Pyroclastic();
-            pyro.SolveProblem1("../../../dummydata.txt", 2);
-                // .Should().Be(17);
-            // pyro.SolveProblem1(file, 2022).Should().Be(3068);
-            // pyro.SolveProblem2(file, 20).Should().Be(56000011);
-            // var answer1 = pyro.SolveProblem1("data.txt", 2022);
-            // Console.WriteLine(answer1);
-            // var answer2 = beacon.SolveProblem2("data.txt", 4000000);
-            // Console.WriteLine($"{answer1} and {answer2}");
+            pyro.SolveProblem1("../../../dummydata.txt", 10).Should().Be(17);
+            pyro.SolveProblem1("../../../dummydata.txt", 2022).Should().Be(3068);
+            pyro.SolveProblem1("../../../data.txt", 2022).Should().Be(3163);
         }
     }
 }
